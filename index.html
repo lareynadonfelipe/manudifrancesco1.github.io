@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
 
-  <!-- ==== Assets públicos PUEDEN usar %BASE_URL% ==== -->
+  <!-- estos usan %BASE_URL% para resolverse a /gestion-campo/... -->
   <link rel="icon" href="%BASE_URL%favicon.ico" />
   <link rel="manifest" href="%BASE_URL%manifest.json" />
   <link rel="apple-touch-icon" href="%BASE_URL%icons/icon-192.png" />
@@ -11,12 +11,12 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#2E8B57" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Mi PWA</title>
 </head>
 <body>
   <div id="root"></div>
-
-  <!-- ==== ENTRY POINT: SIN %BASE_URL%, apunta a la ruta real ==== -->
+  <!-- ENTRY POINT: SIN %BASE_URL%, Vite lo detecta como tu main.jsx -->
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

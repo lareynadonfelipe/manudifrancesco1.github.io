@@ -1,20 +1,24 @@
-// src/main.jsx
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { BrowserRouter } from 'react-router-dom'
 
-// 1) Comprueba si el navegador soporta Service Workers
+// Registrar el Service Worker
 if ('serviceWorker' in navigator) {
-  // 2) Espera a que la página cargue por completo
   window.addEventListener('load', () => {
-    // 3) Registra el sw.js que está en /sw.js (debe residir en public/sw.js)
+    // Aquí usamos la BASE_URL para apuntar a /gestion-campo/sw.js en producción
+    const swUrl = import.meta.env.BASE_URL + 'sw.js'
     navigator.serviceWorker
-      .register('/sw.js')
-      .then(reg => console.log('✅ Service Worker registrado con scope:', reg.scope))
-      .catch(err => console.error('❌ Error registrando Service Worker:', err))
+      .register(swUrl)
+      .then(reg => console.log('✅ SW registrado con scope:', reg.scope))
+      .catch(err => console.error('❌ Error registrando SW:', err))
   })
 }
 
 ReactDOM
   .createRoot(document.getElementById('root'))
-  .render(<App />)
+  .render(
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <App />
+    </BrowserRouter>
+  )
