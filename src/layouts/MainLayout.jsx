@@ -1,19 +1,23 @@
-import { Outlet } from "react-router-dom";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
+// MainLayout.jsx
+import Navbar from '@/components/Navbar'
+import Sidebar from '@/components/Sidebar'
 
-const MainLayout = () => {
+export default function MainLayout({ children }) {
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    // 1) Contenedor full width y full height
+    <div className="flex h-screen w-full bg-gray-50">
+      {/* 2) Sidebar fijo a la izquierda */}
+      <aside className="flex-shrink-0">
+        <Sidebar />
+      </aside>
+
+      {/* 3) Área de contenido: crece, full width */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <Outlet /> {/* 👈 Aquí se renderiza la página correspondiente */}
+        <main className="flex-1 overflow-auto p-4">
+          {children}
         </main>
       </div>
     </div>
-  );
-};
-
-export default MainLayout;
+  )
+}
