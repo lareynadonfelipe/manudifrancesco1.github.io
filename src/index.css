@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force your app’s font everywhere */
+body {
+  @apply font-sans;
+}
