@@ -1,6 +1,8 @@
+// src/pages/LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from '/vite.svg';
+
 
 export default function LoginPage() {
   const [email, setEmail]       = useState("");
@@ -9,22 +11,19 @@ export default function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    sessionStorage.setItem(
-      "usuario",
-      JSON.stringify({ email, role: "admin" })
-    );
+    // TODO: tu lógica real de auth aquí (ej: supabase.auth.signIn)
+    // Por ahora simulamos que siempre es válido:
+    sessionStorage.setItem("usuario", JSON.stringify({ email, role: "admin" }));
     navigate("/inicio");
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-50 p-4 w-full">
+    <div className="flex items-center justify-center min-h-screen bg-green-50 p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
         <div className="text-center mb-6">
-          <img src={logo} alt="Logo" className="mx-auto w-16 h-16" />
-          <h1 className="text-3xl font-bold mt-4">La Reina – Don Felipe</h1>
-          <p className="text-gray-600 mt-1">
-            Gestión agropecuaria técnica y comercial
-          </p>
+        <img src={logo} alt="Logo" className="mx-auto w-16 h-16" />
+        <h1 className="text-3xl font-bold mt-4">La Reina – Don Felipe</h1>
+          <p className="text-gray-600 mt-1">Gestión agropecuaria técnica y comercial</p>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
