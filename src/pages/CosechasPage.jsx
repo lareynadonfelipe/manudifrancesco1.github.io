@@ -220,77 +220,82 @@ const CosechasPage = () => {
               </div>
             </div>
 
-            {/* Balance Lotes Horacio */}
-            <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-              <div className="px-4 py-2 bg-[#f1f4f3] border-b">
-                <h3 className="text-sm font-semibold text-[#235633] uppercase">
-                  Balance Lotes Horacio
-                </h3>
-              </div>
-              <div className="overflow-y-auto max-h-[calc(100vh-300px)] p-4">
-                {(() => {
-                  const cosechasHoracio =
-                    (cosechasAgrupadas[cultivoSeleccionado] || []).filter((c) =>
-                      siembras.find(
-                        (s) =>
-                          s.campania === c.campania &&
-                          s.lote === c.lote &&
-                          s.productor === "Horacio"
-                      )
-                    );
-                  const camionesHoracio = camiones.filter((c) =>
-                    cosechasHoracio.some((cs) => cs.id === c.cosecha_id)
-                  );
+{/* Balance Lotes Horacio */}
+<div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+  <div className="px-4 py-2 bg-[#f1f4f3] border-b">
+    <h3 className="text-sm font-semibold text-[#235633] uppercase">
+      Balance Lotes Horacio
+    </h3>
+  </div>
+  <div className="overflow-y-auto max-h-[calc(100vh-300px)]">
+    {(() => {
+      // Filtrar solo las cosechas cuyo productor es Horacio
+      const cosechasHoracio =
+        (cosechasAgrupadas[cultivoSeleccionado] || []).filter((c) =>
+          siembras.find(
+            (s) =>
+              s.campania === c.campania &&
+              s.lote === c.lote &&
+              s.productor === "Horacio"
+          )
+        );
+      // Todos los camiones de esas cosechas
+      const camionesHoracio = camiones.filter((c) =>
+        cosechasHoracio.some((cs) => cs.id === c.cosecha_id)
+      );
 
-                  const kgCecilia = camionesHoracio.reduce(
-                    (acc, c) => (c.camion_para === "Cecilia" ? acc + (c.kg_campo || 0) : acc),
-                    0
-                  );
-                  const kgHoracio = camionesHoracio.reduce(
-                    (acc, c) => (c.camion_para === "Horacio" ? acc + (c.kg_campo || 0) : acc),
-                    0
-                  );
-                  const total = kgCecilia + kgHoracio;
-                  const porcentajeCecilia = total
-                    ? ((kgCecilia / total) * 100).toFixed(1)
-                    : "-";
-                  const idealPct = cultivoSeleccionado === "Soja" ? 33.5 : 27;
-                  const diffKg = total
-                    ? Math.round((idealPct / 100) * total - kgCecilia)
-                    : 0;
-                  const diffClass =
-                    diffKg > 0
-                      ? "text-red-600 font-medium"
-                      : diffKg < 0
-                      ? "text-green-600 font-medium"
-                      : "text-gray-600";
+      const kgCecilia = camionesHoracio.reduce(
+        (sum, c) => (c.camion_para === "Cecilia" ? sum + (c.kg_campo || 0) : sum),
+        0
+      );
+      const kgHoracio = camionesHoracio.reduce(
+        (sum, c) => (c.camion_para === "Horacio" ? sum + (c.kg_campo || 0) : sum),
+        0
+      );
+      const kgCampo = kgCecilia + kgHoracio; // total de Kg Campo
+      const porcentajeCecilia = kgCampo
+        ? ((kgCecilia / kgCampo) * 100).toFixed(1)
+        : "-";
+      const idealPct = cultivoSeleccionado === "Soja" ? 33.5 : 27;
+      const diffKg = kgCampo
+        ? Math.round((idealPct / 100) * kgCampo - kgCecilia)
+        : 0;
+      const diffClass =
+        diffKg > 0
+          ? "text-red-600 font-medium"
+          : diffKg < 0
+          ? "text-green-600 font-medium"
+          : "text-gray-600";
 
-                  return (
-                    <table className="w-full text-sm">
-                      <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
-                        <tr>
-                          <th className="text-leftpx-4 py-2">Kg Cecilia</th>
-                          <th className="text-left px-4 py-2">Kg Horacio</th>
-                          <th className="text-right px-4 py-2">% Cecilia</th>
-                          <th className="text-right px-4 py-2">Dif. ideal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-t">
-                          <td className="px-4 py-2">{formatNumber(kgCecilia)}</td>
-                          <td className="px-4 py-2">{formatNumber(kgHoracio)}</td>
-                          <td className="px-4 py-2 text-right">{porcentajeCecilia}%</td>
-                          <td className={`px-4 py-2 text-right ${diffClass}`}>
-                            {diffKg > 0 ? "+" : ""}
-                            {formatNumber(diffKg)} kg
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  );
-                })()}
-              </div>
-            </div>
+      return (
+        <table className="w-full text-sm">
+          <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
+            <tr>
+              <th className="text-left px-4 py-2">Kg Campo</th>
+              <th className="text-left px-4 py-2">Kg Horacio</th>
+              <th className="text-left px-4 py-2">Kg Cecilia</th>
+              <th className="text-right px-4 py-2">% Cecilia</th>
+              <th className="text-right px-4 py-2">Dif. ideal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t">
+              <td className="px-4 py-2 text-right">{formatNumber(kgCampo)}</td>
+              <td className="px-4 py-2 text-right">{formatNumber(kgHoracio)}</td>
+              <td className="px-4 py-2 text-right">{formatNumber(kgCecilia)}</td>
+              <td className="px-4 py-2 text-right">{porcentajeCecilia}%</td>
+              <td className={`px-4 py-2 text-right ${diffClass}`}>
+                {diffKg > 0 ? "+" : ""}
+                {formatNumber(diffKg)} kg
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      );
+    })()}
+  </div>
+</div>
+
           </div>
 
           {/* Segunda fila: Resultado y Camiones */}
@@ -303,7 +308,7 @@ const CosechasPage = () => {
                   {loteSeleccionado ? `Camiones ${loteSeleccionado.lote}` : "Seleccioná un lote"}
                 </h3>
               </div>
-              <div className="overflow-y-auto max-h-[calc(100vh-300px)] p-4">
+              <div className="overflow-y-auto max-h-[calc(100vh-300px)]">
                 {loteSeleccionado ? (
                   camionesFiltrados.length ? (
                     <table className="w-full text-sm">
