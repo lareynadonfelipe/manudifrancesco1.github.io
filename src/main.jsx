@@ -1,20 +1,24 @@
-// src/main.jsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
+import './index.css';
+import './App.css';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { HashRouter } from 'react-router-dom';
 
-// 1) Comprueba si el navegador soporta Service Workers
+// Registrar Service Worker según entorno
 if ('serviceWorker' in navigator) {
-  // 2) Espera a que la página cargue por completo
   window.addEventListener('load', () => {
-    // 3) Registra el sw.js que está en /sw.js (debe residir en public/sw.js)
+    // import.meta.env.BASE_URL es '/' en dev y '/gestion-campo/' en prod
+    const swUrl = import.meta.env.BASE_URL + 'sw.js';
     navigator.serviceWorker
-      .register('/sw.js')
-      .then(reg => console.log('✅ Service Worker registrado con scope:', reg.scope))
-      .catch(err => console.error('❌ Error registrando Service Worker:', err))
-  })
+      .register(swUrl)
+      .then(reg => console.log('✅ SW registrado:', reg.scope))
+      .catch(err => console.error('❌ Error registrando SW:', err));
+  });
 }
 
-ReactDOM
-  .createRoot(document.getElementById('root'))
-  .render(<App />)
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <HashRouter basename={import.meta.env.BASE_URL}>
+    <App />
+  </HashRouter>
+);
