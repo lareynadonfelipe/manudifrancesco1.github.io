@@ -7,53 +7,67 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const navigate                = useNavigate()
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = e => {
     e.preventDefault()
-    // —— AQUI VA TU LÓGICA DE AUTENTICACIÓN ——  
-    // Por ejemplo, llamas a tu API o a Supabase:
-    // const { data, error } = await supabase.auth.signIn({ email, password })
-    // if (error) { /* mostrar mensaje */; return }
-    // si todo fue bien:
-    navigate('/inicio')  
+    // — aquí iría tu lógica de autenticación —
+    // por ahora redirigimos a /inicio
+    navigate('/inicio')
   }
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-50">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-md w-full max-w-sm"
-      >
-        <h1 className="text-2xl font-bold mb-4 text-center">Iniciar Sesión</h1>
+    <div className="flex items-center justify-center min-h-screen bg-green-50 p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+        {/* Header con logo, título y subtítulo */}
+        <div className="text-center mb-6">
+          {/* sustituye la src por tu logo si lo tienes */}
+          <img src="%BASE_URL%vite.svg" alt="Logo" className="mx-auto w-16 h-16" />
+          <h1 className="text-3xl font-bold mt-4">La Reina – Don Felipe</h1>
+          <p className="text-gray-600 mt-1">Gestión agropecuaria técnica y comercial</p>
+        </div>
 
-        <label className="block mb-2">
-          <span className="text-gray-700">Correo electrónico</span>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="mt-1 block w-full border-gray-300 rounded"
-            required
-          />
-        </label>
+        {/* Crear cuenta */}
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            className="text-sm text-green-600 hover:underline"
+          >
+            Crear cuenta
+          </button>
+        </div>
 
-        <label className="block mb-4">
-          <span className="text-gray-700">Contraseña</span>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="mt-1 block w-full border-gray-300 rounded"
-            required
-          />
-        </label>
+        {/* Formulario */}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-1">Correo electrónico</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="tucorreo@dominio.com"
+              required
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-        >
-          Ingresar
-        </button>
-      </form>
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+          >
+            Ingresar
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
