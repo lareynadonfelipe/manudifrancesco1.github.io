@@ -3,7 +3,7 @@ node_modules/
 
 # builds
 dist/
-docs/
+
 
 # archivos de sistema
 .DS_Store
