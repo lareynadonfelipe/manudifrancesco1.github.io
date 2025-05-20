@@ -1,7 +1,7 @@
 // src/main.jsx
 
-import './index.css'
-import './App.css'   // si también usas App.css para estilos globales
+import './index.css'      // <— Esto importa Tailwind y tus estilos globales
+import './App.css'        // <— Si tienes reglas extra en App.css
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
