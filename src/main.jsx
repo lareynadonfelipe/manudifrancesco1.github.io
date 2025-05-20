@@ -21,5 +21,5 @@ if ('serviceWorker' in navigator) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <HashRouter basename={import.meta.env.BASE_URL}>
     <App />
-  </BrowserRouter>
+    </HashRouter>
 )
