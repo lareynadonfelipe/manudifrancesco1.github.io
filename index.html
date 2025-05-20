@@ -2,26 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Ícono de la pestaña -->
-  <link rel="icon" href="%BASE_URL%favicon.ico" />
-  <!-- Manifest PWA -->
-  <link rel="manifest" href="%BASE_URL%manifest.json" />
-  <!-- Icono iOS -->
+
+  <!-- ensure BASE URL is applied -->
+  <link rel="icon"           href="%BASE_URL%favicon.ico" />
+  <link rel="manifest"       href="%BASE_URL%manifest.json" />
   <link rel="apple-touch-icon" href="%BASE_URL%icons/icon-192.png" />
 
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#2E8B57" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mi PWA</title>
+  <!-- ...other tags... -->
 </head>
 <body>
   <div id="root"></div>
-
-  <!--
-    ENTRY POINT: sin %BASE_URL%, para que Vite lo convierta
-    a tu bundle final en production (por ejemplo:
-    /gestion-campo/assets/index.abc123.js)
-  -->
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
