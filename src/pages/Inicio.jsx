@@ -1,29 +1,31 @@
-import { Leaf, Truck, Sprout } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+// src/pages/Inicio.jsx
+import React from 'react'
+import { Leaf, Truck, Sprout } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-const Inicio = () => {
-  const navigate = useNavigate();
+export default function Inicio() {
+  const navigate = useNavigate()
 
   const pages = [
     {
-      label: "Cosechas",
-      icon: <Leaf size={28} />,
-      path: "/cosechas",
-      description: "Gestión de lotes cosechados y rendimiento por campaña.",
+      label:      'Cosechas',
+      icon:       <Leaf size={28} />,
+      path:       '/cosechas',
+      description:'Gestión de lotes cosechados y rendimiento por campaña.',
     },
     {
-      label: "Camiones",
-      icon: <Truck size={28} />,
-      path: "/camiones",
-      description: "Registro de transporte de granos por lote y destino.",
+      label:      'Camiones',
+      icon:       <Truck size={28} />,
+      path:       '/camiones',
+      description:'Registro de transporte de granos por lote y destino.',
     },
     {
-      label: "Siembras",
-      icon: <Sprout size={28} />,
-      path: "/siembras",
-      description: "Registro de siembras por campaña, lote y variedad.",
+      label:      'Siembras',
+      icon:       <Sprout size={28} />,
+      path:       '/siembras',
+      description:'Registro de siembras por campaña, lote y variedad.',
     },
-  ];
+  ]
 
   return (
     <div className="p-6 space-y-8">
@@ -31,8 +33,12 @@ const Inicio = () => {
       <div className="flex items-center gap-4">
         <Sprout size={40} className="text-green-700" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">La Reina - Don Felipe</h1>
-          <p className="text-gray-600 text-sm">Gestión agropecuaria técnica y comercial</p>
+          <h1 className="text-2xl font-bold text-gray-800">
+            La Reina - Don Felipe
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Gestión agropecuaria técnica y comercial
+          </p>
         </div>
       </div>
 
@@ -48,12 +54,12 @@ const Inicio = () => {
               {page.icon}
               <h2 className="text-xl font-semibold">{page.label}</h2>
             </div>
-            <p className="text-gray-600 text-sm">{page.description}</p>
+            <p className="text-gray-600 text-sm">
+              {page.description}
+            </p>
           </div>
         ))}
       </div>
     </div>
-  );
-};
-
-export default Inicio;
+  )
+}
