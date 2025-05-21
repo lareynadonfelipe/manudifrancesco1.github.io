@@ -1,6 +1,7 @@
+// src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '/vite.svg';
+import { Sprout } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Lógica de autenticación...
+    // Tu lógica de autenticación aquí…
     navigate('/inicio');
   };
 
@@ -19,16 +20,23 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-md bg-white shadow-lg rounded-lg p-6"
       >
-        <div className="flex justify-center mb-6">
-          <img src={logo} alt="Logo" className="h-12 w-auto" />
+        {/* ─── Icono Planta & Título ─── */}
+        <div className="flex flex-col items-center mb-6">
+          <Sprout size={48} className="text-green-600" />
+          <h1 className="mt-4 text-2xl font-semibold text-gray-800">
+            La Reina – Don Felipe
+          </h1>
         </div>
 
+        {/* ─── Email ─── */}
         <label className="block mb-4">
           <span className="text-gray-700">Email</span>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
+            placeholder="tucorreo@ejemplo.com"
+            required
             className="
               mt-1 block w-full
               rounded-lg border border-gray-300
@@ -36,17 +44,18 @@ export default function LoginPage() {
               focus:outline-none focus:ring-2 focus:ring-green-500
               bg-white
             "
-            placeholder="tucorreo@ejemplo.com"
-            required
           />
         </label>
 
+        {/* ─── Contraseña ─── */}
         <label className="block mb-6">
           <span className="text-gray-700">Contraseña</span>
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
             className="
               mt-1 block w-full
               rounded-lg border border-gray-300
@@ -54,11 +63,10 @@ export default function LoginPage() {
               focus:outline-none focus:ring-2 focus:ring-green-500
               bg-white
             "
-            placeholder="••••••••"
-            required
           />
         </label>
 
+        {/* ─── Botón Entrar ─── */}
         <button
           type="submit"
           className="
