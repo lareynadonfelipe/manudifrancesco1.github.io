@@ -279,7 +279,7 @@ const CosechasPage = () => {
                         <table className="w-full text-sm">
                           <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
                             <tr>
-                              <th className="text-right px-4 py-2">Kg Campo</th>
+                              <th className="text-left px-4 py-2">Kg Campo</th>
                               <th className="text-right px-4 py-2">Kg Horacio</th>
                               <th className="text-right px-4 py-2">Kg Cecilia</th>
                               <th className="text-right px-4 py-2">% Cecilia</th>
