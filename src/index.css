@@ -3,44 +3,31 @@
 @tailwind utilities;
 
 /* --- Reset global para full‐viewport --- */
-html, 
-body, 
-#root {
+html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
 }
-/* ─── Base mobile-first ─── */
-html {
-  font-size: 14px;
-}
-body {
-  margin: 0;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-img, video {
-  max-width: 100%;
-  height: auto;
-}
-/* Asegura espacios contenidos en móvil */
-.container {
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-/* Botones táctiles */
-button {
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-}
 
-/* ─── Ajustes para pantallas ≥768px (deja todo como está) ─── */
-@media (min-width: 768px) {
-  html { font-size: 16px; }
-  .container {
-    padding-left: 2rem;
-    padding-right: 2rem;
+/* ─── Evitar auto-zoom en iOS Safari ─── */
+input,
+textarea,
+select,
+button {
+  font-size: 16px;
+}
+/* Bleed-full: extiende el ancho de móvil al máximo */
+@media (max-width: 767px) {
+  .full-bleed {
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding-left: 1rem;   /* ajustable */
+    padding-right: 1rem;  /* ajustable */
+    width: 100vw;
+  }
+
+  /* Empuja el main para no quedar bajo el bottom-nav */
+  main {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
   }
 }
