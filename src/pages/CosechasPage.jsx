@@ -126,8 +126,8 @@ const CosechasPage = () => {
             Resultado Lotes
           </h3>
         </div>
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="responsive-table mb-6">
+        <table className="w-full text-sm">
             <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
               <tr>
                 <th className="text-left px-4 py-2">Lote</th>
@@ -161,25 +161,26 @@ const CosechasPage = () => {
     <div className="w-full min-h-screen pb-12 px-2">
       {campaniaSeleccionada && (
         <>
-          {/* Pestañas de cultivo */}
-          <div className="flex border-b mb-4">
-            {cultivos.map((c) => (
-              <button
-                key={c}
-                onClick={() => {
-                  setCultivoSeleccionado(c)
-                  setLoteSeleccionado(null)
-                }}
-                className={`px-4 py-2 -mb-px font-medium ${
-                  cultivoSeleccionado === c
-                    ? "border-b-2 border-[#235633] text-[#235633]"
-                    : "border-b-2 border-transparent text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+{/* Pestañas de cultivo */}
+<div className="flex w-full justify-center md:justify-start border-b mb-4">
+  {cultivos.map((c) => (
+    <button
+      key={c}
+      onClick={() => {
+        setCultivoSeleccionado(c)
+        setLoteSeleccionado(null)
+      }}
+      className={`flex-1 text-center py-2 -mb-px font-medium md:flex-none md:px-4 ${
+        cultivoSeleccionado === c
+          ? "border-b-2 border-[#235633] text-[#235633]"
+          : "border-b-2 border-transparent text-gray-600 hover:text-gray-800"
+      }`}
+    >
+      {c}
+    </button>
+  ))}
+</div>
+
 
           {/* Mensaje si no hay datos */}
           {!(

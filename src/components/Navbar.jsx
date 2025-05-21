@@ -41,9 +41,8 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ─── MÓVIL ─── */}
+      {/* MÓVIL */}
       <header className="bg-white/60 backdrop-blur-md border-b border-white/30 md:hidden">
-        {/* Fila 1: menú, título, toggle */}
         <div className="flex items-center justify-between h-16 px-4">
           <button
             onClick={() => document.dispatchEvent(new Event('openSidebar'))}
@@ -52,9 +51,7 @@ export default function Navbar() {
           >
             <MenuIcon size={24} />
           </button>
-
           <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
-
           <button
             onClick={toggleMode}
             aria-label="Cambiar modo"
@@ -63,8 +60,6 @@ export default function Navbar() {
             {mode === 'editor' ? 'ED' : 'LE'}
           </button>
         </div>
-
-        {/* Fila 2: selector de campaña */}
         <div className="px-4 pb-4">
           <select
             value={campaniaSeleccionada}
@@ -72,10 +67,8 @@ export default function Navbar() {
             className="
               block w-full text-base
               border border-gray-300
-              rounded-lg
-              bg-white
-              px-4 py-3
-              shadow-sm
+              rounded-lg bg-white
+              px-4 py-3 shadow-sm
               focus:outline-none focus:ring-2 focus:ring-green-500
               appearance-none
             "
@@ -89,24 +82,31 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ─── ESCRITORIO ─── */}
-      <header className="hidden md:block bg-white/60 backdrop-blur-md border-b border-white/30 shadow-sm">
-        <div className="container mx-auto flex items-center justify-between h-16 px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-gray-800">
-              {getPageTitle()}
-            </h1>
-            <select
-              value={campaniaSeleccionada}
-              onChange={handleCampaniaChange}
-              className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm"
-            >
-              <option value="">Seleccionar campaña</option>
-              {campanias.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+      {/* ESCRITORIO */}
+      <header className="hidden md:flex items-center justify-between h-16 bg-white/60 backdrop-blur-md border-b border-white/30 shadow-sm">
+        <div className="flex items-center gap-4 px-4">
+          <button
+            onClick={() => document.dispatchEvent(new Event('openSidebar'))}
+            aria-label="Abrir menú"
+            className="p-2"
+          >
+            <MenuIcon size={24} />
+          </button>
+          <h1 className="text-xl font-semibold text-gray-800">
+            {getPageTitle()}
+          </h1>
+          <select
+            value={campaniaSeleccionada}
+            onChange={handleCampaniaChange}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm"
+          >
+            <option value="">Seleccionar campaña</option>
+            {campanias.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <div className="px-4">
           <button
             onClick={toggleMode}
             className={`text-sm px-3 py-1 rounded-md font-medium shadow-sm border transition ${
