@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
+import MobileNav from '@/components/MobileNav';
 
 export default function MainLayout() {
   return (
@@ -15,6 +16,7 @@ export default function MainLayout() {
           </div>
         </main>
       </div>
+      <MobileNav />
     </div>
   );
 }
