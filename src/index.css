@@ -10,3 +10,37 @@ body,
   margin: 0;
   padding: 0;
 }
+/* ─── Base mobile-first ─── */
+html {
+  font-size: 14px;
+}
+body {
+  margin: 0;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+/* Asegura espacios contenidos en móvil */
+.container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+/* Botones táctiles */
+button {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+/* ─── Ajustes para pantallas ≥768px (deja todo como está) ─── */
+@media (min-width: 768px) {
+  html { font-size: 16px; }
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
