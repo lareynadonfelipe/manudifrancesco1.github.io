@@ -1,24 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Menu as MenuIcon,
-  X as CloseIcon,
-  Leaf,
-  Truck,
-  Sprout,
-  Home
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Truck, Sprout, Home, Menu, Leaf } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(true);
+export default function Sidebar({ open, setOpen }) {
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const openHandler = () => setCollapsed(false);
-    document.addEventListener('openSidebar', openHandler);
-    return () => document.removeEventListener('openSidebar', openHandler);
-  }, []);
 
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/inicio' },
@@ -27,85 +14,58 @@ export default function Sidebar() {
     { label: 'Siembras', icon: <Sprout size={22} />, path: '/siembras' },
   ];
 
+  const handleNavigation = (path) => {
+    navigate(path);
+    setCollapsed(true);
+    if (window.innerWidth < 768) setOpen(false);
+  };
+
   return (
-    <>
-      {/* Overlay en móvil */}
-      {!collapsed && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setCollapsed(true)}
-        />
-      )}
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 bg-[#235633] text-white flex flex-col transition-transform duration-300
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+        md:relative md:translate-x-0
+        ${collapsed ? 'w-16' : 'w-64'}`}
+    >
+      {/* Header with logo and toggle */}
+      <div className={`flex items-center justify-${collapsed ? 'center' : 'between'} p-4`}>
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <Leaf size={24} />
+            <span className="text-lg font-bold">La Reina<br />Don Felipe</span>
+          </div>
+        )}
+        <button
+          className="p-2 rounded hover:bg-[#1f4f33] md:flex hidden"
+          onClick={() => setCollapsed(prev => !prev)}
+        >
+          <Menu size={24} className={`${collapsed ? 'rotate-180' : ''}`} />
+        </button>
+        <button
+          className="p-2 rounded hover:bg-[#1f4f33] md:hidden"
+          onClick={() => setOpen(false)}
+        >
+          <Menu size={24} />
+        </button>
+      </div>
 
-      {/* Panel */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-50 bg-[#235633] text-white flex flex-col transition-transform duration-300
-          ${collapsed ? '-translate-x-full' : 'translate-x-0'} w-64
-          md:static md:translate-x-0
-          ${collapsed ? 'md:w-16' : 'md:w-64'}
-        `}
-      >
-        {/* Móvil: header */}
-        <div className="flex items-center justify-between px-4 py-3 md:hidden">
-          <span className="text-lg font-bold">La Reina Don Felipe</span>
-          <button onClick={() => setCollapsed(true)} aria-label="Cerrar menú">
-            <CloseIcon size={24} />
-          </button>
-        </div>
-
-        {/* Desktop: logo + toggle */}
-        <div className="hidden md:flex items-center justify-between px-4 pt-4 pb-2">
-          {collapsed ? (
+      {/* Navigation items */}
+      <nav className="flex-1 overflow-y-auto">
+        {navItems.map(({ label, icon, path }) => {
+          const active = location.pathname === path;
+          return (
             <button
-              onClick={() => setCollapsed(false)}
-              className="text-white/80 hover:text-white"
+              key={label}
+              onClick={() => handleNavigation(path)}
+              className={`flex items-center w-full gap-3 px-4 py-3 text-left hover:bg-[#1f4f33] transition-colors
+                ${active ? 'bg-[#1f4f33]' : ''}`}
             >
-              <MenuIcon size={20} />
+              {icon}
+              {!collapsed && <span>{label}</span>}
             </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Sprout size={28} />
-              <div>
-                <div className="text-xl font-bold">La Reina</div>
-                <div className="text-sm text-white/80 -mt-1">Don Felipe</div>
-              </div>
-              <button
-                onClick={() => setCollapsed(true)}
-                className="text-white/80 hover:text-white"
-              >
-                <CloseIcon size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Navegación */}
-        <nav className={`flex flex-col gap-1 px-2 pt-2 pb-4 ${collapsed ? 'items-center' : ''}`}>
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => {
-                navigate(item.path);
-                setCollapsed(true);
-              }}
-              className={`
-                group relative flex items-center gap-3 py-2 px-3 w-full rounded-md hover:bg-white/10 text-sm font-medium transition
-                ${collapsed ? 'justify-center' : 'justify-start'}
-                ${location.pathname === item.path ? 'bg-white/10' : ''}
-              `}
-            >
-              {item.icon}
-              {!collapsed && <span>{item.label}</span>}
-              {collapsed && (
-                <span className="absolute left-full ml-2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition">
-                  {item.label}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-      </aside>
-    </>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }
