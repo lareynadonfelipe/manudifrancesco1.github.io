@@ -30,7 +30,7 @@ const CamionesPage = () => {
         return;
       }
       const cosechaIds = cosechasData.map(c => c.id);
-      if (cosechaIds.length === 0) {
+      if (!cosechaIds.length) {
         setCamionesPorDestino({});
         setLoading(false);
         return;
@@ -48,8 +48,7 @@ const CamionesPage = () => {
       }
       const agrupado = camionesData.reduce((acc, camion) => {
         const dest = camion.destino || "Sin destino";
-        if (!acc[dest]) acc[dest] = [];
-        acc[dest].push(camion);
+        (acc[dest] = acc[dest] || []).push(camion);
         return acc;
       }, {});
       setCamionesPorDestino(agrupado);
@@ -64,49 +63,30 @@ const CamionesPage = () => {
 
   const formatearFecha = fecha => new Date(fecha).toLocaleDateString("es-AR");
 
-  const handleInputChange = (e, campo) => {
-    setFilaEditada(prev => ({ ...prev, [campo]: e.target.value }));
-  };
+  const handleInputChange = (e, campo) => setFilaEditada(prev => ({...prev, [campo]: e.target.value}));
 
   const guardarFilaEditada = async () => {
     if (!filaEditada.id) return;
     const { id, ...updates } = filaEditada;
-    const { error } = await supabase
-      .from("camiones")
-      .update(updates)
-      .eq("id", id);
+    const { error } = await supabase.from("camiones").update(updates).eq("id", id);
     if (error) console.error("Error al guardar:", error.message);
-    else {
-      setCamionesPorDestino(prev => {
-        const nuevo = {};
-        Object.entries(prev).forEach(([dest, lista]) => {
-          nuevo[dest] = lista.map(c => (c.id === id ? filaEditada : c));
-        });
-        return nuevo;
-      });
-    }
     setEditandoFilaId(null);
   };
 
-  if (!campaniaSeleccionada) {
-    return (
-      <div className="p-6 text-center text-gray-600">
-        Por favor selecciona una campaña para ver los camiones.
-      </div>
-    );
-  }
+  if (!campaniaSeleccionada) return <div className="p-4 text-center text-gray-600">Por favor selecciona una campaña.</div>;
 
   const destinos = Object.keys(camionesPorDestino);
-  const headers = ['Fecha', 'CTG', 'Camión Para', 'Chofer', 'Chasis', 'Kg Campo', 'Kg Destino'];
+  // Cambiada columna 'Camión Para' a 'Productor'
+  const headers = ['Fecha','CTG','Productor','Chofer','Chasis','Kg Campo','Kg Destino'];
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4 text-gray-600">Destinos</h1>
-      <div className="bg-white border shadow-sm rounded-lg w-full overflow-hidden">
+    <div className="px-2 sm:px-6 py-4">
+      <h1 className="text-lg sm:text-xl font-bold mb-3 text-gray-600">Destinos</h1>
+      <div className="bg-white border shadow rounded-lg w-full overflow-hidden">
         {loading ? (
-          <div className="text-center py-6 text-gray-500 text-sm">Cargando camiones...</div>
-        ) : destinos.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">No hay camiones para esta campaña.</div>
+          <div className="text-center p-6 text-gray-500">Cargando camiones...</div>
+        ) : !destinos.length ? (
+          <div className="text-center p-6 text-gray-500">No hay camiones.</div>
         ) : (
           destinos.sort().map(destino => {
             const lista = camionesPorDestino[destino];
@@ -114,44 +94,42 @@ const CamionesPage = () => {
               <div key={destino} className="border-b first:border-t">
                 <button
                   onClick={() => toggleDestino(destino)}
-                  className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  className="w-full flex justify-between items-center px-3 py-2 sm:px-4 sm:py-3 bg-gray-100 text-gray-600 hover:bg-gray-200"
                 >
-                  <span className="text-lg font-semibold text-gray-600">{destino}</span>
-                  {destinoExpandido === destino ? <ChevronUp /> : <ChevronDown />}
+                  <span className="text-base sm:text-lg font-semibold text-gray-600">{destino}</span>
+                  {destinoExpandido===destino?<ChevronUp/>:<ChevronDown/>}
                 </button>
-                {destinoExpandido === destino && (
+                {destinoExpandido===destino&&(
                   <div className="overflow-y-auto max-h-[60vh] w-full">
-                    <table className="w-full table-auto text-sm text-gray-700 border-separate border-spacing-0">
+                    <table className="w-full table-auto text-xs sm:text-sm text-gray-700 border-separate border-spacing-0">
                       <thead className="bg-gray-50 text-gray-600 uppercase text-xs border-b sticky top-0 z-10">
                         <tr>
-                          {headers.map(header => (
-                            <th key={header} className="px-4 py-2 text-left whitespace-nowrap">
-                              {header}
-                            </th>
+                          {headers.map(h => (
+                            <th key={h} className="px-2 py-1 sm:px-4 sm:py-2 text-left whitespace-nowrap w-min">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {lista.map(camion => (
-                          <tr
-                            key={camion.id}
-                            className="hover:bg-gray-50 cursor-pointer"
-                            onClick={() => mode === 'editor' && (setEditandoFilaId(camion.id), setFilaEditada(camion))}
-                          >
-                            {['fecha', 'ctg', 'camion_para', 'chofer', 'chasis', 'kg_campo', 'kg_destino'].map(campo => (
-                              <td key={campo} className="px-4 py-2 whitespace-nowrap">
-                                {editandoFilaId === camion.id ? (
+                        {lista.map(c => (
+                          <tr key={c.id} className="hover:bg-gray-50">
+                            {['fecha','ctg','camion_para','chofer','chasis','kg_campo','kg_destino'].map(field => (
+                              <td key={field} className="px-2 py-1 sm:px-4 sm:py-2 whitespace-nowrap">
+                                {editandoFilaId===c.id ? (
                                   <input
-                                    value={campo === 'fecha' ? formatearFecha(filaEditada[campo]) : filaEditada[campo] ?? ''}
-                                    onChange={e => handleInputChange(e, campo)}
+                                    value={
+                                      field==='fecha'
+                                        ? formatearFecha(filaEditada[field])
+                                        : filaEditada[field]||''
+                                    }
+                                    onChange={e => handleInputChange(e, field)}
                                     onBlur={guardarFilaEditada}
-                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), guardarFilaEditada())}
-                                    className="border rounded-md px-2 py-1 text-sm w-full"
+                                    onKeyDown={e => e.key==='Enter'&&(e.preventDefault(),guardarFilaEditada())}
+                                    className="border rounded px-1 py-1 text-xs sm:text-sm w-full"
                                   />
-                                ) : campo === 'fecha' ? (
-                                  formatearFecha(camion[campo])
+                                ) : field==='fecha' ? (
+                                  formatearFecha(c[field])
                                 ) : (
-                                  camion[campo] ?? '-'
+                                  c[field]||'-'
                                 )}
                               </td>
                             ))}
@@ -169,5 +147,4 @@ const CamionesPage = () => {
     </div>
   );
 };
-
 export default CamionesPage;
