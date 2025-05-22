@@ -1,13 +1,12 @@
-// src/pages/CamionesPage.jsx
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/uiStore";
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { useCampaniaStore } from "@/store/campaniaStore";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const CamionesPage = () => {
   const { mode } = useUIStore();
-  const [campaniaSeleccionada, setCampaniaSeleccionada] = useState("");
+  const { campaniaSeleccionada } = useCampaniaStore();
   const [camionesPorDestino, setCamionesPorDestino] = useState({});
   const [destinoExpandido, setDestinoExpandido] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,172 +14,158 @@ const CamionesPage = () => {
   const [filaEditada, setFilaEditada] = useState({});
 
   useEffect(() => {
-    // Lógica para cargar camionesPorDestino según campaniaSeleccionada
+    const fetchCamiones = async () => {
+      if (!campaniaSeleccionada) {
+        setCamionesPorDestino({});
+        return;
+      }
+      setLoading(true);
+      const { data: cosechasData, error: errorC } = await supabase
+        .from("cosechas")
+        .select("id")
+        .eq("campania", campaniaSeleccionada);
+      if (errorC) {
+        console.error("Error fetching cosechas:", errorC.message);
+        setLoading(false);
+        return;
+      }
+      const cosechaIds = cosechasData.map(c => c.id);
+      if (cosechaIds.length === 0) {
+        setCamionesPorDestino({});
+        setLoading(false);
+        return;
+      }
+      const { data: camionesData, error } = await supabase
+        .from("camiones")
+        .select(
+          "id, fecha, ctg, camion_para, chofer, chasis, kg_campo, kg_destino, destino, cosecha_id"
+        )
+        .in("cosecha_id", cosechaIds);
+      if (error) {
+        console.error("Error fetching camiones:", error.message);
+        setLoading(false);
+        return;
+      }
+      const agrupado = camionesData.reduce((acc, camion) => {
+        const dest = camion.destino || "Sin destino";
+        if (!acc[dest]) acc[dest] = [];
+        acc[dest].push(camion);
+        return acc;
+      }, {});
+      setCamionesPorDestino(agrupado);
+      setLoading(false);
+    };
+    fetchCamiones();
   }, [campaniaSeleccionada]);
 
-  const toggleDestino = (destino) => {
+  const toggleDestino = destino => {
     setDestinoExpandido(prev => (prev === destino ? null : destino));
   };
 
-  const formatearNumero = (n) => n?.toLocaleString("es-AR");
-  const formatearFecha = (fecha) => {
-    const d = new Date(fecha);
-    return d.toLocaleDateString("es-AR");
-  };
+  const formatearFecha = fecha => new Date(fecha).toLocaleDateString("es-AR");
 
   const handleInputChange = (e, campo) => {
     setFilaEditada(prev => ({ ...prev, [campo]: e.target.value }));
   };
 
   const guardarFilaEditada = async () => {
-    // Lógica para guardar los cambios en Supabase
+    if (!filaEditada.id) return;
+    const { id, ...updates } = filaEditada;
+    const { error } = await supabase
+      .from("camiones")
+      .update(updates)
+      .eq("id", id);
+    if (error) console.error("Error al guardar:", error.message);
+    else {
+      setCamionesPorDestino(prev => {
+        const nuevo = {};
+        Object.entries(prev).forEach(([dest, lista]) => {
+          nuevo[dest] = lista.map(c => (c.id === id ? filaEditada : c));
+        });
+        return nuevo;
+      });
+    }
     setEditandoFilaId(null);
   };
 
-  const eliminarCamion = async (id) => {
-    // Lógica para eliminar camión de Supabase y actualizar estado local
-    setCamionesPorDestino(prev =>
-      Object.fromEntries(
-        Object.entries(prev).map(([dest, lista]) => [
-          dest,
-          lista.filter(c => c.id !== id)
-        ])
-      )
+  if (!campaniaSeleccionada) {
+    return (
+      <div className="p-6 text-center text-gray-600">
+        Por favor selecciona una campaña para ver los camiones.
+      </div>
     );
-  };
+  }
+
+  const destinos = Object.keys(camionesPorDestino);
+  const headers = ['Fecha', 'CTG', 'Camión Para', 'Chofer', 'Chasis', 'Kg Campo', 'Kg Destino'];
 
   return (
-    <div>
-      {/* 📊 Tabla general agrupada por destino */}
-      {campaniaSeleccionada && (
-        <div className="bg-white border shadow-sm rounded-xl overflow-hidden">
-          {loading ? (
-            <div className="text-center py-6 text-gray-500 text-sm">
-              Cargando camiones...
-            </div>
-          ) : (
-            Object.entries(camionesPorDestino)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([destino, lista]) => (
-                <div key={destino} className="border-b">
-                  <button
-                    onClick={() => toggleDestino(destino)}
-                    className="w-full flex justify-between items-start gap-4 px-4 py-3 text-left text-sm font-medium bg-[#f1f4f3] hover:bg-gray-100 text-gray-700"
-                  >
-                    <span className="flex flex-col">
-                      <span className="font-semibold">{destino}</span>
-                      <span className="text-xs text-gray-600">
-                        Cecilia: {formatearNumero(
-                          lista
-                            .filter(c => c.camion_para === "Cecilia")
-                            .reduce((acc, c) => acc + (c.kg_campo || 0), 0)
-                        )} / {formatearNumero(
-                          lista
-                            .filter(c => c.camion_para === "Cecilia")
-                            .reduce((acc, c) => acc + (c.kg_destino || 0), 0)
-                        )} kg — Horacio: {formatearNumero(
-                          lista
-                            .filter(c => c.camion_para === "Horacio")
-                            .reduce((acc, c) => acc + (c.kg_campo || 0), 0)
-                        )} / {formatearNumero(
-                          lista
-                            .filter(c => c.camion_para === "Horacio")
-                            .reduce((acc, c) => acc + (c.kg_destino || 0), 0)
-                        )} kg
-                      </span>
-                    </span>
-                    {destinoExpandido === destino ? <ChevronUp /> : <ChevronDown />}
-                  </button>
-
-                  {destinoExpandido === destino && (
-                    <div className="max-h-[600px] overflow-y-auto">
-                      <table className="text-sm text-gray-700 border-collapse w-full">
-                        <thead className="bg-gray-50 text-gray-600 uppercase text-xs border-b sticky top-0 z-10">
-                          <tr>
-                            <th className="px-4 py-2 text-left bg-white">Fecha</th>
-                            <th className="px-4 py-2 text-left bg-white">CTG</th>
-                            <th className="px-4 py-2 text-left bg-white">Camión Para</th>
-                            <th className="px-4 py-2 text-left bg-white">Chofer</th>
-                            <th className="px-4 py-2 text-left bg-white">Chasis</th>
-                            <th className="px-4 py-2 text-left bg-white">Kg Campo</th>
-                            <th className="px-4 py-2 text-left bg-white">Kg Destino</th>
-                            <th className="px-4 py-2 text-center bg-white">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {lista.map(camion => (
-                            <tr
-                              key={camion.id}
-                              className="border-b hover:bg-gray-50 cursor-pointer"
-                              onClick={() => {
-                                if (mode === "editor") {
-                                  setEditandoFilaId(camion.id);
-                                  setFilaEditada(camion);
-                                }
-                              }}
-                            >
-                              {[
-                                "fecha",
-                                "ctg",
-                                "camion_para",
-                                "chofer",
-                                "chasis",
-                                "kg_campo",
-                                "kg_destino"
-                              ].map(campo => (
-                                <td key={campo} className="px-4 py-2 whitespace-nowrap">
-                                  {editandoFilaId === camion.id ? (
-                                    <input
-                                      value={
-                                        campo === "fecha"
-                                          ? formatearFecha(filaEditada[campo])
-                                          : filaEditada[campo] ?? ""
-                                      }
-                                      onChange={e => handleInputChange(e, campo)}
-                                      onBlur={guardarFilaEditada}
-                                      onKeyDown={e => {
-                                        if (e.key === "Enter") {
-                                          e.preventDefault();
-                                          guardarFilaEditada();
-                                        }
-                                      }}
-                                      className="border rounded-md px-2 py-1 text-sm w-full"
-                                    />
-                                  ) : campo === "fecha" ? (
-                                    formatearFecha(camion[campo])
-                                  ) : (
-                                    camion[campo] ?? "-"
-                                  )}
-                                </td>
-                              ))}
-
-                              <td className="px-2 py-2 text-center align-middle">
-                                {editandoFilaId === camion.id && (
-                                  <button
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      if (window.confirm("¿Estás seguro de eliminar?")) {
-                                        eliminarCamion(camion.id);
-                                      }
-                                    }}
-                                    className="text-red-500 hover:text-red-700"
-                                    title="Eliminar"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
+    <div className="p-6">
+      <h1 className="text-xl font-bold mb-4 text-gray-600">Destinos</h1>
+      <div className="bg-white border shadow-sm rounded-lg w-full overflow-hidden">
+        {loading ? (
+          <div className="text-center py-6 text-gray-500 text-sm">Cargando camiones...</div>
+        ) : destinos.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">No hay camiones para esta campaña.</div>
+        ) : (
+          destinos.sort().map(destino => {
+            const lista = camionesPorDestino[destino];
+            return (
+              <div key={destino} className="border-b first:border-t">
+                <button
+                  onClick={() => toggleDestino(destino)}
+                  className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 text-gray-600 hover:bg-gray-200"
+                >
+                  <span className="text-lg font-semibold text-gray-600">{destino}</span>
+                  {destinoExpandido === destino ? <ChevronUp /> : <ChevronDown />}
+                </button>
+                {destinoExpandido === destino && (
+                  <div className="overflow-y-auto max-h-[60vh] w-full">
+                    <table className="w-full table-auto text-sm text-gray-700 border-separate border-spacing-0">
+                      <thead className="bg-gray-50 text-gray-600 uppercase text-xs border-b sticky top-0 z-10">
+                        <tr>
+                          {headers.map(header => (
+                            <th key={header} className="px-4 py-2 text-left whitespace-nowrap">
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lista.map(camion => (
+                          <tr
+                            key={camion.id}
+                            className="hover:bg-gray-50 cursor-pointer"
+                            onClick={() => mode === 'editor' && (setEditandoFilaId(camion.id), setFilaEditada(camion))}
+                          >
+                            {['fecha', 'ctg', 'camion_para', 'chofer', 'chasis', 'kg_campo', 'kg_destino'].map(campo => (
+                              <td key={campo} className="px-4 py-2 whitespace-nowrap">
+                                {editandoFilaId === camion.id ? (
+                                  <input
+                                    value={campo === 'fecha' ? formatearFecha(filaEditada[campo]) : filaEditada[campo] ?? ''}
+                                    onChange={e => handleInputChange(e, campo)}
+                                    onBlur={guardarFilaEditada}
+                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), guardarFilaEditada())}
+                                    className="border rounded-md px-2 py-1 text-sm w-full"
+                                  />
+                                ) : campo === 'fecha' ? (
+                                  formatearFecha(camion[campo])
+                                ) : (
+                                  camion[campo] ?? '-'
                                 )}
                               </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              ))
-          )}
-        </div>
-      )}
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };

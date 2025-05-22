@@ -2,32 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- Reset global para full‐viewport --- */
+/* ─── Reset global ─── */
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* ─── Evitar auto-zoom en iOS Safari ─── */
-input,
-textarea,
-select,
-button {
-  font-size: 16px;
+/* ─── Base mobile-first ─── */
+html { font-size: 14px; }
+body, #root {
+  @apply m-0 p-0 min-h-full;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
-/* Bleed-full: extiende el ancho de móvil al máximo */
+
+/* ─── Imágenes y vídeos ─── */
+img, video { @apply max-w-full h-auto; }
+
+/* ─── Botones táctiles ─── */
+button, a { @apply min-w-[44px] min-h-[44px]; }
+
+/* ─── Evitar auto-zoom iOS ─── */
+input, textarea, select, button { font-size: 16px; }
+
+/* ─── Safe-area bottom iOS ─── */
+body { padding-bottom: env(safe-area-inset-bottom); }
+
+/* ─── Tablas responsivas ─── */
+.responsive-table {
+  @apply w-full overflow-x-auto md:overflow-visible;
+}
+.responsive-table table {
+  @apply table-auto min-w-full md:min-w-0;
+}
+.responsive-table th,
+.responsive-table td {
+  @apply break-words;
+}
+
+/* ─── Móvil (<768px): full-bleed ─── */
 @media (max-width: 767px) {
-  .full-bleed {
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-    padding-left: 1rem;   /* ajustable */
-    padding-right: 1rem;  /* ajustable */
-    width: 100vw;
+  .container { @apply px-0; }
+  main      { @apply p-0; }
+}
+
+/* ─── Desktop (≥768px): flujo y centrado ─── */
+@media (min-width: 768px) {
+  html { font-size: 16px; }
+
+  .container {
+    max-width: 1280px;       /* ancho máximo */
+    margin-left: auto;       /* centro horizontal */
+    margin-right: auto;
+    padding-left: 1.5rem;    /* px-6 */
+    padding-right: 1.5rem;
   }
 
-  /* Empuja el main para no quedar bajo el bottom-nav */
   main {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
+    @apply p-6;              /* tu padding desktop */
   }
 }
