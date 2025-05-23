@@ -12,19 +12,19 @@ import UnauthorizedPage from "./pages/UnauthorizedPage";
 export default function App() {
   return (
     <Routes>
-      {/* Pantalla de login pública */}
+      {/* login público */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Rutas con sidebar + navbar */}
+      {/* rutas con layout */}
       <Route element={<MainLayout />}>
-        <Route path="/inicio" element={<Inicio />} />
-        <Route path="/cosechas" element={<CosechasPage />} />
-        <Route path="/siembras" element={<SiembrasPage />} />
-        <Route path="/camiones" element={<CamionesPage />} />
+        <Route path="/inicio"    element={<Inicio />} />
+        <Route path="/cosechas"  element={<CosechasPage />} />
+        <Route path="/siembras"  element={<SiembrasPage />} />
+        <Route path="/camiones"  element={<CamionesPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
-      {/* Cualquier otra ruta redirige a login */}
+      {/* fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

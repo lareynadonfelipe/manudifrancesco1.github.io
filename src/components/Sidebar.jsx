@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Leaf, Truck, Sprout, Home, Menu as MenuIcon, X } from 'lucide-react';
+import { Leaf, Truck, Sprout, Home, Users, Menu as MenuIcon, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
 
 export default function Sidebar({ open, setOpen }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -12,6 +13,8 @@ export default function Sidebar({ open, setOpen }) {
     { label: 'Cosechas', icon: <Leaf size={22} />, path: '/cosechas' },
     { label: 'Camiones', icon: <Truck size={22} />, path: '/camiones' },
     { label: 'Siembras', icon: <Sprout size={22} />, path: '/siembras' },
+
+
   ];
 
   const handleNavigation = (path) => {
@@ -92,6 +95,8 @@ export default function Sidebar({ open, setOpen }) {
       </nav>
     </aside>
   );
+
+  
 
   return (
     <>
