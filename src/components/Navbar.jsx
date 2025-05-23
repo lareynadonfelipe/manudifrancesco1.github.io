@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCampaniaStore } from "@/store/campaniaStore";
 import { useUIStore } from "@/store/uiStore";

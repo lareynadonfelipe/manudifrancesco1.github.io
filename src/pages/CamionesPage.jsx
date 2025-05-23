@@ -90,7 +90,7 @@ const CamionesPage = () => {
       {/* Card principal */}
       <div className="rounded-xl border bg-white shadow-sm w-full max-h-screen flex flex-col overflow-hidden">
         {/* Encabezado como en CosechasPage */}
-        <div className="px-1 py-3 sm:px-4 sm:py-4 bg-[#f1f4f3] border-b">
+        <div className="px-4 py-4 sm:px-4 sm:py-4 bg-[#f1f4f3] border-b">
           <h3 className="text-sm font-semibold text-[#235633] uppercase">Camiones ingresados</h3>
         </div>
 
