@@ -129,7 +129,7 @@ const CosechasPage = () => {
             Resultado Lotes
           </h3>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto lg:overflow-visible">
           <table className="min-w-full table-fixed text-xs sm:text-sm">
             <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
               <tr>
