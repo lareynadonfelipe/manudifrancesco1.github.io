@@ -36,8 +36,17 @@ const Navbar = ({ toggleSidebar }) => {
     localStorage.setItem("campaniaSeleccionada", e.target.value);
   };
 
-  const handleSliderChange = e => setFontScale(parseFloat(e.target.value));
-  const toggleSlider = () => setShowSlider(prev => !prev);
+  // Handle Aa button click: presets on mobile, slider on desktop
+  const handleAaClick = () => {
+    if (window.innerWidth < 768) {
+      const presets = [0.9, 1, 1.3];
+      const idx = presets.indexOf(fontScale);
+      const next = presets[(idx + 1) % presets.length];
+      setFontScale(next);
+    } else {
+      setShowSlider(prev => !prev);
+    }
+  };
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -58,7 +67,7 @@ const Navbar = ({ toggleSidebar }) => {
           <div className="flex flex-col">
             <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
             <select
-              className="md:hidden text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm w-auto mt-1"
+              className="mt-1 md:hidden text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm w-auto"
               value={campaniaSeleccionada}
               onChange={handleCampaniaChange}
             >
@@ -76,18 +85,18 @@ const Navbar = ({ toggleSidebar }) => {
           </select>
         </div>
         <div className="relative">
-          <button onClick={toggleSlider} className="p-2 rounded-md hover:bg-gray-100">
+          <button onClick={handleAaClick} className="p-2 rounded-md hover:bg-gray-100">
             <span className="text-gray-800 text-lg">Aa</span>
           </button>
           {showSlider && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md p-3 shadow-lg">
+            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md p-3 shadow-lg hidden md:block">
               <input
                 type="range"
                 min="0.8"
                 max="1.5"
                 step="0.05"
                 value={fontScale}
-                onChange={handleSliderChange}
+                onChange={e => setFontScale(parseFloat(e.target.value))}
                 className="w-full"
               />
               <div className="flex justify-between items-center w-full text-gray-600 text-xs mt-1">

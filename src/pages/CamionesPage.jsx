@@ -76,7 +76,7 @@ const CamionesPage = () => {
           <button
             key={dest}
             onClick={() => setDestinoSeleccionado(prev => (prev === dest ? null : dest))}
-            className={`flex-1 sm:flex-none text-center px-4 py-2 text-lg sm:text-base font-medium whitespace-nowrap ${
+            className={`flex-1 sm:flex-none text-center px-4 py-2 text-lg sm:text-base font-medium whitespace-normal sm:whitespace-nowrap ${
               destinoSeleccionado === dest
                 ? 'text-green-800 border-b-2 border-green-800'
                 : 'text-gray-600 hover:text-gray-800'
