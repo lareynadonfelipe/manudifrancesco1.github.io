@@ -68,115 +68,93 @@ const CosechasPage = () => {
       }, {})
   )
 
-  // Función para renderizar resultado lotes
-  const renderTablaCultivo = (cultivo) => {
-    const items = cosechasAgrupadas[cultivo] || []
-    const totales = { ha: 0, kgCampo: 0, kgCecilia: 0, kgHoracio: 0 }
+// Función para renderizar resultado lotes
+const renderTablaCultivo = (cultivo) => {
+  const items = cosechasAgrupadas[cultivo] || []
+  const totales = { ha: 0, kgCampo: 0, kgCecilia: 0, kgHoracio: 0 }
 
-    const rows = items.map((item) => {
-      const s = siembras.find(
-        (x) => x.campania === item.campania && x.lote === item.lote
-      ) || {}
-      const ha = s.ha || 0
-      const productor = s.productor || "-"
-      const camDel = camiones.filter((c) => c.cosecha_id === item.id)
-      const kgCampo = camDel.reduce((sum, c) => sum + (c.kg_campo || 0), 0)
-      const kgCec = camDel
-        .filter((c) => c.camion_para === "Cecilia")
-        .reduce((sum, c) => sum + (c.kg_campo || 0), 0)
-      const kgHor = camDel
-        .filter((c) => c.camion_para === "Horacio")
-        .reduce((sum, c) => sum + (c.kg_campo || 0), 0)
-      const rto = ha ? (kgCampo / ha / 100).toFixed(2) : "-"
+  const rows = items.map((item) => {
+    const s = siembras.find(
+      (x) => x.campania === item.campania && x.lote === item.lote
+    ) || {}
+    const ha = s.ha || 0
+    const productor = s.productor || "-"
+    const camDel = camiones.filter((c) => c.cosecha_id === item.id)
+    const kgCampo = camDel.reduce((sum, c) => sum + (c.kg_campo || 0), 0)
+    const kgCec = camDel
+      .filter((c) => c.camion_para === "Cecilia")
+      .reduce((sum, c) => sum + (c.kg_campo || 0), 0)
+    const kgHor = camDel
+      .filter((c) => c.camion_para === "Horacio")
+      .reduce((sum, c) => sum + (c.kg_campo || 0), 0)
+    const rto = ha ? (kgCampo / ha / 100).toFixed(2) : "-"
 
-      totales.ha += ha
-      totales.kgCampo += kgCampo
-      totales.kgCecilia += kgCec
-      totales.kgHoracio += kgHor
-
-      return (
-        <tr
-          key={item.id}
-          className="border-t hover:bg-gray-50 cursor-pointer"
-          onClick={() => setLoteSeleccionado(item)}
-        >
-<td className="px-0 py-0 sm:px-4 sm:py-2">{item.lote}</td>         
-<td className="px-0 py-0 sm:px-4 sm:py-2">{productor}</td>
-<td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-         {formatNumber(ha)}
-          </td>
-          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">{rto}</td>
-          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-            {formatNumber(kgCampo)}
-          </td>
-          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-            {formatNumber(kgCec)}
-          </td>
-          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-            {formatNumber(kgHor)}
-          </td>
-        </tr>
-      )
-    })
-
-    const rendimientoProm = totales.ha
-      ? (totales.kgCampo / totales.ha / 100).toFixed(2)
-      : "-"
+    totales.ha += ha
+    totales.kgCampo += kgCampo
+    totales.kgCecilia += kgCec
+    totales.kgHoracio += kgHor
 
     return (
-<div className="self-start rounded-xl border bg-white shadow-sm overflow-hidden w-full">        <div className="px-4 py-2 bg-[#f1f4f3] border-b rounded-t-xl">
-          <h3 className="text-sm font-semibold text-[#235633] uppercase">
-            Resultado Lotes
-          </h3>
-        </div>
-        <div className="overflow-x-auto lg:overflow-visible">
-          <table className="min-w-full table-fixed text-xs sm:text-sm">
-            <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
-              <tr>
-              <th className="px-1 py-1 sm:px-4 sm:py-2 text-left">Lote</th>               
-              <th className="px-0 py-0 sm:px-2 sm:py-1 whitespace-nowrap max-w-[80px] truncate">
-                  Productor
-                </th>
-                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">Ha</th>
-                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">Rto</th>
-                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">
-                  Kg Campo
-                </th>
-                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">
-                  Kg Cecilia
-                </th>
-                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">
-                  Kg Horacio
-                </th>
-              </tr>
-            </thead>
-            <tbody>{rows}</tbody>
-            <tfoot className="bg-[#f1f4f3] font-semibold border-t">
-              <tr>
-                <td className="px-1 py-1 sm:px-4 sm:py-2">Total</td>
-                <td className="px-1 py-1 sm:px-4 sm:py-2"></td>
-                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-                  {formatNumber(totales.ha)}
-                </td>
-                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-                  {rendimientoProm}
-                </td>
-                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-                  {formatNumber(totales.kgCampo)}
-                </td>
-                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-                  {formatNumber(totales.kgCecilia)}
-                </td>
-                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
-                  {formatNumber(totales.kgHoracio)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
+      <tr
+        key={item.id}
+        className="border-t hover:bg-gray-50 cursor-pointer"
+        onClick={() => setLoteSeleccionado(item)}
+      >
+        <td className="px-4 py-2 whitespace-nowrap">{item.lote}</td>
+        <td className="px-4 py-2">{productor}</td>
+        <td className="px-4 py-2 text-right">{formatNumber(ha)}</td>
+        <td className="px-4 py-2 text-right">{rto}</td>
+        <td className="px-4 py-2 text-right">{formatNumber(kgCampo)}</td>
+        <td className="px-4 py-2 text-right">{formatNumber(kgCec)}</td>
+        <td className="px-4 py-2 text-right">{formatNumber(kgHor)}</td>
+      </tr>
     )
-  }
+  })
+
+  const rendimientoProm = totales.ha
+    ? (totales.kgCampo / totales.ha / 100).toFixed(2)
+    : "-"
+
+  return (
+    <div className="self-start rounded-xl border bg-white shadow-sm overflow-hidden w-full">
+      {/* Cabecera idéntica a Camiones */}
+      <div className="px-4 py-2 bg-[#f1f4f3] border-b">
+        <h3 className="text-sm font-semibold text-[#235633] uppercase">
+          Resultado Lotes
+        </h3>
+      </div>
+      {/* Scroll en móvil, visible completo en desktop */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
+            <tr>
+              <th className="px-4 py-2 text-left">Lote</th>
+              <th className="px-4 py-2 text-left">Productor</th>
+              <th className="px-4 py-2 text-right">Ha</th>
+              <th className="px-4 py-2 text-right">Rto</th>
+              <th className="px-4 py-2 text-right">Kg Campo</th>
+              <th className="px-4 py-2 text-right">Kg Cecilia</th>
+              <th className="px-4 py-2 text-right">Kg Horacio</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+          <tfoot className="bg-[#f1f4f3] font-semibold border-t">
+            <tr>
+              <td className="px-4 py-2">Total</td>
+              <td className="px-4 py-2"></td>
+              <td className="px-4 py-2 text-right">{formatNumber(totales.ha)}</td>
+              <td className="px-4 py-2 text-right">{rendimientoProm}</td>
+              <td className="px-4 py-2 text-right">{formatNumber(totales.kgCampo)}</td>
+              <td className="px-4 py-2 text-right">{formatNumber(totales.kgCecilia)}</td>
+              <td className="px-4 py-2 text-right">{formatNumber(totales.kgHoracio)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 
   return (
     <div className="w-full min-h-screen pb-12 px-2">
