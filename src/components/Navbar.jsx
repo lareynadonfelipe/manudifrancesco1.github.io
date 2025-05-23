@@ -11,11 +11,13 @@ const Navbar = ({ toggleSidebar }) => {
   const [fontScale, setFontScale] = useState(1);
   const [showSlider, setShowSlider] = useState(false);
 
+  // Load saved campaign
   useEffect(() => {
     const saved = localStorage.getItem("campaniaSeleccionada");
     if (saved) setCampaniaSeleccionada(saved);
   }, [setCampaniaSeleccionada]);
 
+  // Fetch campaigns
   useEffect(() => {
     const fetchCampanias = async () => {
       const { data } = await supabase.from("siembras").select("campania");
@@ -24,14 +26,14 @@ const Navbar = ({ toggleSidebar }) => {
     fetchCampanias();
   }, []);
 
+  // Apply font scale
   useEffect(() => {
     document.documentElement.style.fontSize = `${fontScale}rem`;
   }, [fontScale]);
 
   const handleCampaniaChange = e => {
-    const value = e.target.value;
-    setCampaniaSeleccionada(value);
-    localStorage.setItem("campaniaSeleccionada", value);
+    setCampaniaSeleccionada(e.target.value);
+    localStorage.setItem("campaniaSeleccionada", e.target.value);
   };
 
   const handleSliderChange = e => setFontScale(parseFloat(e.target.value));
@@ -47,27 +49,32 @@ const Navbar = ({ toggleSidebar }) => {
   };
 
   return (
-    <header className="bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
-      {/* First row: title and controls */}
+    <header className="relative z-50 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
       <div className="flex items-center justify-between">
-        {/* Left: hamburger, title, desktop selector */}
         <div className="flex items-center gap-4">
           <button onClick={toggleSidebar} className="md:hidden p-2 rounded-md hover:bg-gray-100">
             <Menu size={24} className="text-gray-800" />
           </button>
-          <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
+            <select
+              className="md:hidden text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm w-auto mt-1"
+              value={campaniaSeleccionada}
+              onChange={handleCampaniaChange}
+            >
+              <option value="">Seleccionar campaña</option>
+              {campanias.map(c => (<option key={c} value={c}>{c}</option>))}
+            </select>
+          </div>
           <select
+            className="hidden md:block text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm"
             value={campaniaSeleccionada}
             onChange={handleCampaniaChange}
-            className="hidden md:block text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm"
           >
             <option value="">Seleccionar campaña</option>
-            {campanias.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            {campanias.map(c => (<option key={c} value={c}>{c}</option>))}
           </select>
         </div>
-        {/* Right: Aa button */}
         <div className="relative">
           <button onClick={toggleSlider} className="p-2 rounded-md hover:bg-gray-100">
             <span className="text-gray-800 text-lg">Aa</span>
@@ -91,19 +98,6 @@ const Navbar = ({ toggleSidebar }) => {
             </div>
           )}
         </div>
-      </div>
-      {/* Second row: mobile selector under title */}
-      <div className="mt-2 md:hidden flex ml-[72px]">
-        <select
-          value={campaniaSeleccionada}
-          onChange={handleCampaniaChange}
-          className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm w-auto"
-        >
-          <option value="">Seleccionar campaña</option>
-          {campanias.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
       </div>
     </header>
   );
