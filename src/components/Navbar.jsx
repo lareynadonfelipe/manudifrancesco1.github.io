@@ -86,7 +86,7 @@ export default function Navbar({ toggleSidebar }) {
   };
 
   return (
-    <header className="relative z-50 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
+    <header className="relative z-20 md:z-50 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={toggleSidebar} className="md:hidden p-2 rounded-md hover:bg-gray-100">
