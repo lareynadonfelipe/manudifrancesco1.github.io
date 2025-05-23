@@ -3,13 +3,13 @@ import { Menu } from 'lucide-react';
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useCampaniaStore } from "@/store/campaniaStore";
-import { useUIStore } from "@/store/uiStore";
 
 const Navbar = ({ toggleSidebar }) => {
   const location = useLocation();
   const { campaniaSeleccionada, setCampaniaSeleccionada } = useCampaniaStore();
-  const { mode, toggleMode } = useUIStore();
   const [campanias, setCampanias] = useState([]);
+  const [fontScale, setFontScale] = useState(1);
+  const [showSlider, setShowSlider] = useState(false);
 
   // Recuperar campaña guardada al montar
   useEffect(() => {
@@ -27,12 +27,22 @@ const Navbar = ({ toggleSidebar }) => {
     fetchCampanias();
   }, []);
 
-  // Guardar campaña seleccionada
+  // Aplicar escala de fuente
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${fontScale}rem`;
+  }, [fontScale]);
+
   const handleCampaniaChange = (e) => {
     const value = e.target.value;
     setCampaniaSeleccionada(value);
     localStorage.setItem("campaniaSeleccionada", value);
   };
+
+  const handleSliderChange = (e) => {
+    setFontScale(parseFloat(e.target.value));
+  };
+
+  const toggleSlider = () => setShowSlider(prev => !prev);
 
   const getPageTitle = () => {
     if (location.pathname.includes("cosechas")) return "Cosechas";
@@ -44,14 +54,12 @@ const Navbar = ({ toggleSidebar }) => {
 
   return (
     <header className="h-16 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 flex items-center justify-between shadow-sm">
-      {/* Agrupa hamburguesa, título y selector al inicio */}
+      {/* Wrapper izquierdo con hamburguesa, título y selector */}
       <div className="flex items-center gap-4">
         <button onClick={toggleSidebar} className="md:hidden p-2 rounded-md hover:bg-gray-100">
           <Menu size={24} className="text-gray-800" />
         </button>
-        <h1 className="text-xl font-semibold text-gray-800">
-          {getPageTitle()}
-        </h1>
+        <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
         <select
           value={campaniaSeleccionada}
           onChange={handleCampaniaChange}
@@ -66,17 +74,30 @@ const Navbar = ({ toggleSidebar }) => {
         </select>
       </div>
 
-      {/* Botón modo editor/lector */}
-      <button
-        onClick={toggleMode}
-        className={`text-sm px-3 py-1 rounded-md font-medium shadow-sm border transition ${
-          mode === "editor"
-            ? "bg-green-600 text-white hover:bg-green-700"
-            : "bg-white text-green-700 border-green-600 hover:bg-green-50"
-        }`}
-      >
-        Modo {mode === "editor" ? "Editor" : "Lector"}
-      </button>
+      {/* Botón de slider para tamaño de fuente en todas las versiones */}
+      <div className="relative">
+        <button onClick={toggleSlider} className="p-2 rounded-md hover:bg-gray-100">
+          <span className="text-gray-800 text-lg">Aa</span>
+        </button>
+        {showSlider && (
+          <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md p-3 shadow-lg">
+            <input
+              type="range"
+              min="0.8"
+              max="1.5"
+              step="0.05"
+              value={fontScale}
+              onChange={handleSliderChange}
+              className="w-full"
+            />
+            <div className="flex justify-between items-center w-full text-gray-600 text-xs mt-1">
+              <span style={{ fontSize: '0.8rem' }}>A</span>
+              <span style={{ fontSize: `${fontScale}rem` }}>A</span>
+              <span style={{ fontSize: '1.5rem' }}>A</span>
+            </div>
+          </div>
+        )}
+      </div>
     </header>
   );
 };
