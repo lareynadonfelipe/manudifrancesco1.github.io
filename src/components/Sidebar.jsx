@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Leaf, Truck, Sprout, Home, Users, Menu as MenuIcon, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-
 export default function Sidebar({ open, setOpen }) {
-  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Inicializar colapsado en desktop cuando estamos en /inicio
+  const [collapsed, setCollapsed] = useState(() => {
+    const isDesktop = window.innerWidth >= 768;
+    const isHome = location.pathname === '/inicio';
+    return isDesktop && isHome;
+  });
 
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/inicio' },
     { label: 'Cosechas', icon: <Leaf size={22} />, path: '/cosechas' },
     { label: 'Camiones', icon: <Truck size={22} />, path: '/camiones' },
     { label: 'Siembras', icon: <Sprout size={22} />, path: '/siembras' },
-
-
   ];
 
   const handleNavigation = (path) => {
@@ -68,16 +71,9 @@ export default function Sidebar({ open, setOpen }) {
             <span className="text-lg font-bold leading-tight">La Reina<br/>Don Felipe</span>
           </div>
         )}
-        {collapsed && (
-          <button className="p-2 rounded hover:bg-[#1f4f33]" onClick={() => setCollapsed(prev => !prev)}>
-            <MenuIcon size={24} className="rotate-180" />
-          </button>
-        )}
-        {!collapsed && (
-          <button className="p-2 rounded hover:bg-[#1f4f33]" onClick={() => setCollapsed(prev => !prev)}>
-            <MenuIcon size={24} />
-          </button>
-        )}
+        <button className="p-2 rounded hover:bg-[#1f4f33]" onClick={() => setCollapsed(prev => !prev)}>
+          <MenuIcon size={24} className={collapsed ? 'rotate-180' : ''} />
+        </button>
       </div>
       <nav className="flex-1 overflow-y-auto">
         {navItems.map(({ label, icon, path }) => (
@@ -95,8 +91,6 @@ export default function Sidebar({ open, setOpen }) {
       </nav>
     </aside>
   );
-
-  
 
   return (
     <>
