@@ -71,21 +71,37 @@ const CamionesPage = () => {
   return (
     <div className="px-2 sm:px-6 py-4">
       {/* Tabs fuera de la card */}
-      <div className="flex justify-evenly sm:justify-start border-b mb-4 overflow-x-auto">
-        {destinos.map(dest => (
-          <button
-            key={dest}
-            onClick={() => setDestinoSeleccionado(prev => (prev === dest ? null : dest))}
-            className={`flex-1 sm:flex-none text-center px-4 py-2 text-lg sm:text-base font-medium whitespace-normal sm:whitespace-nowrap ${
-              destinoSeleccionado === dest
-                ? 'text-green-800 border-b-2 border-green-800'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            {dest}
-          </button>
-        ))}
-      </div>
+      {/* Mobile dropdown */}
+<div className="sm:hidden mb-4">
+  <select
+    value={destinoSeleccionado || ''}
+    onChange={e => setDestinoSeleccionado(e.target.value || null)}
+    className="block w-full border-gray-300 rounded-md px-4 py-2 text-base"
+  >
+    <option value="">Todos los destinos</option>
+    {destinos.map(dest => (
+      <option key={dest} value={dest} className="text-gray-700">
+        {dest}
+      </option>
+    ))}
+  </select>
+</div>
+{/* Desktop tabs */}
+<div className="hidden sm:flex justify-start border-b mb-4 overflow-x-auto">
+  {destinos.map(dest => (
+    <button
+      key={dest}
+      onClick={() => setDestinoSeleccionado(prev => (prev === dest ? null : dest))}
+      className={`px-4 pb-2 text-sm sm:text-base font-medium whitespace-nowrap ${
+        destinoSeleccionado === dest
+          ? 'text-green-800 border-b-2 border-green-800'
+          : 'text-gray-600 hover:text-gray-800'
+      }`}
+    >
+      {dest}
+    </button>
+  ))}
+</div>
 
       {/* Card principal */}
       <div className="rounded-xl border bg-white shadow-sm w-full max-h-screen flex flex-col overflow-hidden">
