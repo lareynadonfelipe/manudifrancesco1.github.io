@@ -63,7 +63,7 @@ const SiembrasPage = () => {
   const headers = ["Lote", "Ha", "Variedad", "Productor"];
 
   return (
-    <div className="px-2 sm:px-6 py-4">
+    <div className="px-4 sm:px-6 py-2">
       {!campaniaSeleccionada ? (
         <div className="p-4 text-center text-gray-600">
           Por favor selecciona una campaña en el navbar.
@@ -88,81 +88,87 @@ const SiembrasPage = () => {
           </div>
 
           {/* Cards por campo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-            {Object.entries(groupedByCampo).map(([campo, items]) => {
-              const totalHa = items.reduce((sum, i) => sum + (parseFloat(i.ha) || 0), 0);
-              return (
-                <div
-                  key={campo}
-                  className="rounded-xl border bg-white shadow-sm flex flex-col overflow-hidden"
-                >
-                  <div className="px-4 py-3 bg-[#f1f4f3] border-b flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-[#235633] uppercase">
-                      {campo}
-                    </h3>
-                    <span className="text-sm font-semibold text-primary">
-                      {Math.round(totalHa).toLocaleString("es-AR")} ha
-                    </span>
-                  </div>
+          {Object.entries(groupedByCampo).length === 0 ? (
+            <div className="text-center p-6 text-gray-500">
+              No hay siembras para este cultivo.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              {Object.entries(groupedByCampo).map(([campo, items]) => {
+                const totalHa = items.reduce((sum, i) => sum + (parseFloat(i.ha) || 0), 0);
+                return (
+                  <div
+                    key={campo}
+                    className="rounded-xl border bg-white shadow-sm flex flex-col overflow-hidden"
+                  >
+                    <div className="px-4 py-3 bg-[#f1f4f3] border-b flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-[#235633] uppercase">
+                        {campo}
+                      </h3>
+                      <span className="text-sm font-semibold text-primary">
+                        {Math.round(totalHa).toLocaleString("es-AR")} ha
+                      </span>
+                    </div>
 
-                  {loading ? (
-                    <div className="text-center p-6 text-gray-500">
-                      Cargando siembras...
-                    </div>
-                  ) : !items.length ? (
-                    <div className="text-center p-6 text-gray-500">
-                      No hay siembras para {campo}.
-                    </div>
-                  ) : (
-                    <div className="overflow-auto relative">
-                      <table className="min-w-full table-auto text-sm text-gray-700 divide-y divide-gray-200">
-                        <thead className="sticky top-0 bg-gray-50 text-gray-600 uppercase text-xs font-medium z-10">
-                          <tr>
-                            {headers.map(h => (
-                              <th
-                                key={h}
-                                className="sticky top-0 px-4 py-2 text-left whitespace-nowrap bg-gray-50"
-                              >
-                                {h}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {items.map(item => (
-                            <tr
-                              key={item.id}
-                              className="hover:bg-gray-100 cursor-pointer"
-                              onClick={() => mode === "editor" && handleStartEdit(item)}
-                            >
-                              {['lote', 'ha', 'variedad', 'productor'].map(field => (
-                                <td key={field} className="px-4 py-2 whitespace-nowrap">
-                                  {filaEditandoId === item.id ? (
-                                    <input
-                                      type={field === 'ha' ? 'number' : 'text'}
-                                      value={filaEditada[field] || ''}
-                                      onChange={e =>
-                                        setFilaEditada(prev => ({ ...prev, [field]: e.target.value }))
-                                      }
-                                      onBlur={handleSave}
-                                      onKeyDown={handleKeyDown}
-                                      className="border rounded-md px-2 py-1 text-sm w-full"
-                                    />
-                                  ) : (
-                                    item[field] || '-'
-                                  )}
-                                </td>
+                    {loading ? (
+                      <div className="text-center p-6 text-gray-500">
+                        Cargando siembras...
+                      </div>
+                    ) : !items.length ? (
+                      <div className="text-center p-6 text-gray-500">
+                        No hay siembras para {campo}.
+                      </div>
+                    ) : (
+                      <div className="overflow-auto relative">
+                        <table className="min-w-full table-auto text-sm text-gray-700 divide-y divide-gray-200">
+                          <thead className="sticky top-0 bg-gray-50 text-gray-600 uppercase text-xs font-medium z-10">
+                            <tr>
+                              {headers.map(h => (
+                                <th
+                                  key={h}
+                                  className="sticky top-0 px-4 py-2 text-left whitespace-nowrap bg-gray-50"
+                                >
+                                  {h}
+                                </th>
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {items.map(item => (
+                              <tr
+                                key={item.id}
+                                className="hover:bg-gray-100 cursor-pointer"
+                                onClick={() => mode === "editor" && handleStartEdit(item)}
+                              >
+                                {['lote', 'ha', 'variedad', 'productor'].map(field => (
+                                  <td key={field} className="px-4 py-2 whitespace-nowrap">
+                                    {filaEditandoId === item.id ? (
+                                      <input
+                                        type={field === 'ha' ? 'number' : 'text'}
+                                        value={filaEditada[field] || ''}
+                                        onChange={e =>
+                                          setFilaEditada(prev => ({ ...prev, [field]: e.target.value }))
+                                        }
+                                        onBlur={handleSave}
+                                        onKeyDown={handleKeyDown}
+                                        className="border rounded-md px-2 py-1 text-sm w-full"
+                                      />
+                                    ) : (
+                                      item[field] || '-'
+                                    )}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
-import { useLocation } from "react-router-dom";
+import { Menu, LogIn, LogOut } from 'lucide-react';
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useCampaniaStore } from "@/store/campaniaStore";
 
-const Navbar = ({ toggleSidebar }) => {
+export default function Navbar({ toggleSidebar }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { campaniaSeleccionada, setCampaniaSeleccionada } = useCampaniaStore();
   const [campanias, setCampanias] = useState([]);
   const [fontScale, setFontScale] = useState(1);
   const [showSlider, setShowSlider] = useState(false);
+  const [user, setUser] = useState(null);
 
   // Load saved campaign
   useEffect(() => {
@@ -26,6 +28,25 @@ const Navbar = ({ toggleSidebar }) => {
     fetchCampanias();
   }, []);
 
+  // Auth state listener (Supabase v2)
+  useEffect(() => {
+    let mounted = true;
+    // initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) setUser(session?.user ?? null);
+    });
+    // listen for changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUser(session?.user ?? null);
+    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Apply font scale
   useEffect(() => {
     document.documentElement.style.fontSize = `${fontScale}rem`;
@@ -36,7 +57,7 @@ const Navbar = ({ toggleSidebar }) => {
     localStorage.setItem("campaniaSeleccionada", e.target.value);
   };
 
-  // Handle Aa button click: presets on mobile, slider on desktop
+  // Handle Aa click: presets on mobile, slider on desktop
   const handleAaClick = () => {
     if (window.innerWidth < 768) {
       const presets = [0.9, 1, 1.3];
@@ -46,6 +67,13 @@ const Navbar = ({ toggleSidebar }) => {
     } else {
       setShowSlider(prev => !prev);
     }
+  };
+
+  const handleLogin = () => navigate('/login');
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
   };
 
   const getPageTitle = () => {
@@ -84,32 +112,39 @@ const Navbar = ({ toggleSidebar }) => {
             {campanias.map(c => (<option key={c} value={c}>{c}</option>))}
           </select>
         </div>
-        <div className="relative">
+        <div className="flex items-center gap-2">
           <button onClick={handleAaClick} className="p-2 rounded-md hover:bg-gray-100">
             <span className="text-gray-800 text-lg">Aa</span>
           </button>
-          {showSlider && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md p-3 shadow-lg hidden md:block">
-              <input
-                type="range"
-                min="0.8"
-                max="1.5"
-                step="0.05"
-                value={fontScale}
-                onChange={e => setFontScale(parseFloat(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between items-center w-full text-gray-600 text-xs mt-1">
-                <span style={{ fontSize: '0.8rem' }}>A</span>
-                <span style={{ fontSize: `${fontScale}rem` }}>A</span>
-                <span style={{ fontSize: '1.5rem' }}>A</span>
-              </div>
-            </div>
+          {user ? (
+            <button onClick={handleLogout} className="p-2 rounded-md hover:bg-gray-100">
+              <LogOut size={20} className="text-gray-800" />
+            </button>
+          ) : (
+            <button onClick={handleLogin} className="p-2 rounded-md hover:bg-gray-100">
+              <LogIn size={20} className="text-gray-800" />
+            </button>
           )}
         </div>
       </div>
+      {showSlider && (
+        <div className="absolute right-6 top-full mt-2 w-40 bg-white border border-gray-200 rounded-md p-3 shadow-lg hidden md:block">
+          <input
+            type="range"
+            min="0.8"
+            max="1.5"
+            step="0.05"
+            value={fontScale}
+            onChange={e => setFontScale(parseFloat(e.target.value))}
+            className="w-full"
+          />
+          <div className="flex justify-between items-center w-full text-gray-600 text-xs mt-1">
+            <span style={{ fontSize: '0.8rem' }}>A</span>
+            <span style={{ fontSize: `${fontScale}rem` }}>A</span>
+            <span style={{ fontSize: '1.5rem' }}>A</span>
+          </div>
+        </div>
+      )}
     </header>
   );
-};
-
-export default Navbar;
+}

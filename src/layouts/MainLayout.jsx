@@ -19,8 +19,8 @@ export default function MainLayout() {
         <Navbar toggleSidebar={toggleSidebar} />
 
         <main className="flex-1 w-full overflow-y-auto bg-gray-50">
-          {/* Contenedor con padding reducido */}
-          <div className="w-full px-2 py-1">
+          {/* Contenedor con padding mínimo vertical */}
+          <div className="w-full px-2 py-0">
             <Outlet />
           </div>
         </main>

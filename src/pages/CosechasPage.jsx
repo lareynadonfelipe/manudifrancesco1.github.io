@@ -100,18 +100,19 @@ const CosechasPage = () => {
           className="border-t hover:bg-gray-50 cursor-pointer"
           onClick={() => setLoteSeleccionado(item)}
         >
-<td className="px-1 py-1 sm:px-4 sm:py-2 whitespace-nowrap">{item.lote}</td>          <td className="px-1 py-1 sm:px-4 sm:py-2">{productor}</td>
-          <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
-            {formatNumber(ha)}
+<td className="px-0 py-0 sm:px-4 sm:py-2">{item.lote}</td>         
+<td className="px-0 py-0 sm:px-4 sm:py-2">{productor}</td>
+<td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
+         {formatNumber(ha)}
           </td>
-          <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">{rto}</td>
-          <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">{rto}</td>
+          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
             {formatNumber(kgCampo)}
           </td>
-          <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
             {formatNumber(kgCec)}
           </td>
-          <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+          <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
             {formatNumber(kgHor)}
           </td>
         </tr>
@@ -133,18 +134,18 @@ const CosechasPage = () => {
             <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
               <tr>
               <th className="px-1 py-1 sm:px-4 sm:py-2 text-left">Lote</th>               
-             <th className="px-1 py-1 sm:px-4 sm:py-2 text-left">
+              <th className="px-0 py-0 sm:px-2 sm:py-1 whitespace-nowrap max-w-[80px] truncate">
                   Productor
                 </th>
-                <th className="px-1 py-1 sm:px-4 sm:py-2 text-right">Ha</th>
-                <th className="px-1 py-1 sm:px-4 sm:py-2 text-right">Rto</th>
-                <th className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">Ha</th>
+                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">Rto</th>
+                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">
                   Kg Campo
                 </th>
-                <th className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">
                   Kg Cecilia
                 </th>
-                <th className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <th className="px-0 py-0 sm:px-2 sm:py-1 text-right whitespace-nowrap">
                   Kg Horacio
                 </th>
               </tr>
@@ -154,19 +155,19 @@ const CosechasPage = () => {
               <tr>
                 <td className="px-1 py-1 sm:px-4 sm:py-2">Total</td>
                 <td className="px-1 py-1 sm:px-4 sm:py-2"></td>
-                <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
                   {formatNumber(totales.ha)}
                 </td>
-                <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
                   {rendimientoProm}
                 </td>
-                <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
                   {formatNumber(totales.kgCampo)}
                 </td>
-                <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
                   {formatNumber(totales.kgCecilia)}
                 </td>
-                <td className="px-1 py-1 sm:px-4 sm:py-2 text-right">
+                <td className="px-0 py-0 sm:px-2 sm:py-1 text-right">
                   {formatNumber(totales.kgHoracio)}
                 </td>
               </tr>

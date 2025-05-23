@@ -69,44 +69,43 @@ const CamionesPage = () => {
       : Object.values(camionesPorDestino).flat();
 
   return (
-    <div className="px-2 sm:px-6 py-4">
-      {/* Tabs fuera de la card */}
+    <div className="px-4 sm:px-4 py-2">
       {/* Mobile dropdown */}
-<div className="sm:hidden mb-4">
-  <select
-    value={destinoSeleccionado || ''}
-    onChange={e => setDestinoSeleccionado(e.target.value || null)}
-    className="block w-full border-gray-300 rounded-md px-4 py-2 text-base"
-  >
-    <option value="">Todos los destinos</option>
-    {destinos.map(dest => (
-      <option key={dest} value={dest} className="text-gray-700">
-        {dest}
-      </option>
-    ))}
-  </select>
-</div>
-{/* Desktop tabs */}
-<div className="hidden sm:flex justify-start border-b mb-4 overflow-x-auto">
-  {destinos.map(dest => (
-    <button
-      key={dest}
-      onClick={() => setDestinoSeleccionado(prev => (prev === dest ? null : dest))}
-      className={`px-4 pb-2 text-sm sm:text-base font-medium whitespace-nowrap ${
-        destinoSeleccionado === dest
-          ? 'text-green-800 border-b-2 border-green-800'
-          : 'text-gray-600 hover:text-gray-800'
-      }`}
-    >
-      {dest}
-    </button>
-  ))}
-</div>
+      <div className="sm:hidden mb-4">
+        <select
+          value={destinoSeleccionado || ''}
+          onChange={e => setDestinoSeleccionado(e.target.value || null)}
+          className="block w-full border-gray-300 rounded-md px-4 py-2 text-base"
+        >
+          <option value="">Todos los destinos</option>
+          {destinos.map(dest => (
+            <option key={dest} value={dest} className="text-gray-700">
+              {dest}
+            </option>
+          ))}
+        </select>
+      </div>
+      {/* Desktop tabs */}
+      <div className="hidden sm:flex justify-start border-b mb-2 overflow-x-auto">
+        {destinos.map(dest => (
+          <button
+            key={dest}
+            onClick={() => setDestinoSeleccionado(prev => (prev === dest ? null : dest))}
+            className={`px-4 pb-2 text-sm sm:text-base font-medium whitespace-nowrap ${
+              destinoSeleccionado === dest
+                ? 'text-green-800 border-b-2 border-green-800'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            {dest}
+          </button>
+        ))}
+      </div>
 
       {/* Card principal */}
       <div className="rounded-xl border bg-white shadow-sm w-full max-h-screen flex flex-col overflow-hidden">
         {/* Encabezado como en CosechasPage */}
-        <div className="px-4 py-4 sm:px-4 sm:py-4 bg-[#f1f4f3] border-b">
+        <div className="px-4 py-2 bg-[#f1f4f3] border-b">
           <h3 className="text-sm font-semibold text-[#235633] uppercase">Camiones ingresados</h3>
         </div>
 
@@ -122,7 +121,8 @@ const CamionesPage = () => {
                 <tr>
                   {headers.map(h => (
                     <th
-                      key={h} className="sticky top-0 px-1 py-1 sm:px-4 sm:py-2 text-left whitespace-nowrap bg-gray-50 w-min"
+                      key={h}
+                      className="sticky top-0 px-1 py-2 sm:px-4 sm:py-2 text-left whitespace-normal sm:whitespace-nowrap bg-gray-50 w-min"
                     >
                       {h}
                     </th>
@@ -136,37 +136,39 @@ const CamionesPage = () => {
                     className="hover:bg-gray-100 cursor-pointer"
                     onClick={() => mode === 'editor' && (setEditandoFilaId(item.id), setFilaEditada(item))}
                   >
-                    {['fecha','ctg','camion_para','chofer','chasis','kg_campo','kg_destino'].map(field => (
-                      <td key={field} className="px-1 py-3 sm:px-4 sm:py-2 whitespace-nowrap w-min">
-                        {editandoFilaId === item.id ? (
-                          <input
-                            value={field === 'fecha' ? new Date(filaEditada[field]).toLocaleDateString('es-AR') : filaEditada[field] || ''}
-                            onChange={e => setFilaEditada(prev => ({ ...prev, [field]: e.target.value }))}
-                            onBlur={async () => {
-                              if (!filaEditada.id) return;
-                              const { id, ...updates } = filaEditada;
-                              await supabase.from('camiones').update(updates).eq('id', id);
-                              setEditandoFilaId(null);
-                            }}
-                            onKeyDown={e =>
-                              e.key === 'Enter' &&
-                              (e.preventDefault(),
-                              (async () => {
+                    {['fecha','ctg','camion_para','chofer','chasis','kg_campo','kg_destino'].map(
+                      field => (
+                        <td key={field} className="px-1 py-2 sm:px-4 sm:py-2 whitespace-nowrap w-min">
+                          {editandoFilaId === item.id ? (
+                            <input
+                              value={field === 'fecha' ? new Date(filaEditada[field]).toLocaleDateString('es-AR') : filaEditada[field] || ''}
+                              onChange={e => setFilaEditada(prev => ({ ...prev, [field]: e.target.value }))}
+                              onBlur={async () => {
                                 if (!filaEditada.id) return;
                                 const { id, ...updates } = filaEditada;
                                 await supabase.from('camiones').update(updates).eq('id', id);
                                 setEditandoFilaId(null);
-                              })())
-                            }
-                            className="border rounded-md px-2 py-1 text-sm w-full"
-                          />
-                        ) : field === 'fecha' ? (
-                          new Date(item[field]).toLocaleDateString('es-AR')
-                        ) : (
-                          item[field] || '-'
-                        )}
-                      </td>
-                    ))}
+                              }}
+                              onKeyDown={e =>
+                                e.key === 'Enter' &&
+                                (e.preventDefault(),
+                                (async () => {
+                                  if (!filaEditada.id) return;
+                                  const { id, ...updates } = filaEditada;
+                                  await supabase.from('camiones').update(updates).eq('id', id);
+                                  setEditandoFilaId(null);
+                                })())
+                              }
+                              className="border rounded-md px-2 py-1 text-sm w-full"
+                            />
+                          ) : field === 'fecha' ? (
+                            new Date(item[field]).toLocaleDateString('es-AR')
+                          ) : (
+                            item[field] || '-'
+                          )}
+                        </td>
+                      )
+                    )}
                   </tr>
                 ))}
               </tbody>
