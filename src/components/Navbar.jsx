@@ -31,14 +31,10 @@ export default function Navbar({ toggleSidebar }) {
   // Auth state listener (Supabase v2)
   useEffect(() => {
     let mounted = true;
-    // initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) setUser(session?.user ?? null);
     });
-    // listen for changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) setUser(session?.user ?? null);
     });
     return () => {
@@ -70,7 +66,6 @@ export default function Navbar({ toggleSidebar }) {
   };
 
   const handleLogin = () => navigate('/login');
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
@@ -82,8 +77,12 @@ export default function Navbar({ toggleSidebar }) {
     if (path.includes("siembras")) return "Siembras";
     if (path.includes("camiones")) return "Camiones";
     if (path.includes("inicio")) return "Inicio";
-    return "Gestión";
+    if (path.includes("ventas")) return "Stock/Ventas";
+    return "Stock/Ventas";
   };
+
+  // Hide selector on ventas page
+  const showSelector = !location.pathname.includes("ventas");
 
   return (
     <header className="relative z-20 md:z-50 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
@@ -94,23 +93,27 @@ export default function Navbar({ toggleSidebar }) {
           </button>
           <div className="flex flex-col">
             <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
+            {showSelector && (
+              <select
+                className="mt-1 md:hidden text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm w-auto"
+                value={campaniaSeleccionada}
+                onChange={handleCampaniaChange}
+              >
+                <option value="">Seleccionar campaña</option>
+                {campanias.map(c => (<option key={c} value={c}>{c}</option>))}
+              </select>
+            )}
+          </div>
+          {showSelector && (
             <select
-              className="mt-1 md:hidden text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm w-auto"
+              className="hidden md:block text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm"
               value={campaniaSeleccionada}
               onChange={handleCampaniaChange}
             >
               <option value="">Seleccionar campaña</option>
               {campanias.map(c => (<option key={c} value={c}>{c}</option>))}
             </select>
-          </div>
-          <select
-            className="hidden md:block text-sm border border-gray-300 rounded-md px-2 py-1 bg-white shadow-sm"
-            value={campaniaSeleccionada}
-            onChange={handleCampaniaChange}
-          >
-            <option value="">Seleccionar campaña</option>
-            {campanias.map(c => (<option key={c} value={c}>{c}</option>))}
-          </select>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleAaClick} className="p-2 rounded-md hover:bg-gray-100">

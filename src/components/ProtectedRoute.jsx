@@ -1,38 +1,42 @@
 // src/components/ProtectedRoute.jsx
 import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
 
 /**
- * Protege rutas comprobando si hay un "usuario" en sessionStorage
- * y, opcionalmente, si su role está en rolesPermitidos.
+ * ProtectedRoute ahora recibe:
+ *    - permissionKey: la clave dentro de `permissions` en sessionStorage (ej. "cosechas", "siembras", "camiones", "ventas", etc.)
+ *    - children (opcional; si no lo pasás, usará <Outlet />)
  *
- * @param {{ rolesPermitidos?: string[], children: React.ReactNode }} props
+ * - Si no hay sesión, redirige a /login.
+ * - Si hay sesión pero user.permissions[permissionKey] !== true, redirige a /unauthorized.
+ * - Si todo OK, renderiza children ó <Outlet />.
  */
-export default function ProtectedRoute({ rolesPermitidos = [], children }) {
+export default function ProtectedRoute({ permissionKey, children }) {
   const location = useLocation();
 
-  // Leo la sesión
+  // 1) Leo la sesión de sessionStorage
   const raw = sessionStorage.getItem("usuario");
   if (!raw) {
-    // No hay usuario → al login
+    // No hay usuario → redirige a /login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  let user;
+  let usuario;
   try {
-    user = JSON.parse(raw);
+    usuario = JSON.parse(raw);
   } catch {
-    // Si el JSON está mal formado, limpio y voy a login
+    // JSON mal formado → limpio y vuelvo a login
     sessionStorage.removeItem("usuario");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const { role } = user;
-  // Si hay roles permitidos y el user.role no está entre ellos
-  if (rolesPermitidos.length > 0 && !rolesPermitidos.includes(role)) {
+  // 2) Extraigo permissions / role
+  const { permissions } = usuario;
+  // Si no existe el objeto permissions o la clave permissionKey es false/undefined:
+  if (!permissions || permissions[permissionKey] !== true) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Todo OK → renderizo el children de la ruta
-  return <>{children}</>;
+  // 3) Si todo OK, renderizo children o <Outlet />
+  return children ? <>{children}</> : <Outlet />;
 }

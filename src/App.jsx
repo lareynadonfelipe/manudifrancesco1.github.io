@@ -7,24 +7,44 @@ import Inicio from "./pages/Inicio";
 import CosechasPage from "./pages/CosechasPage";
 import SiembrasPage from "./pages/SiembrasPage";
 import CamionesPage from "./pages/CamionesPage";
+import VentasPage from "./pages/VentasPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
     <Routes>
-      {/* login público */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* rutas con layout */}
       <Route element={<MainLayout />}>
-        <Route path="/inicio"    element={<Inicio />} />
-        <Route path="/cosechas"  element={<CosechasPage />} />
-        <Route path="/siembras"  element={<SiembrasPage />} />
-        <Route path="/camiones"  element={<CamionesPage />} />
+        {/* Sólo si permissions.inicio === true */}
+        <Route element={<ProtectedRoute permissionKey="inicio" />}>
+          <Route path="/inicio" element={<Inicio />} />
+        </Route>
+
+        {/* Sólo si permissions.cosechas === true */}
+        <Route element={<ProtectedRoute permissionKey="cosechas" />}>
+          <Route path="/cosechas" element={<CosechasPage />} />
+        </Route>
+
+        {/* Sólo si permissions.siembras === true */}
+        <Route element={<ProtectedRoute permissionKey="siembras" />}>
+          <Route path="/siembras" element={<SiembrasPage />} />
+        </Route>
+
+        {/* Sólo si permissions.camiones === true */}
+        <Route element={<ProtectedRoute permissionKey="camiones" />}>
+          <Route path="/camiones" element={<CamionesPage />} />
+        </Route>
+
+        {/* Sólo si permissions.ventas === true */}
+        <Route element={<ProtectedRoute permissionKey="ventas" />}>
+          <Route path="/ventas" element={<VentasPage />} />
+        </Route>
+
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
-      {/* fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

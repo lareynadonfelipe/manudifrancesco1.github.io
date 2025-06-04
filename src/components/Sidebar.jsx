@@ -1,5 +1,6 @@
+// src/components/Sidebar.jsx
 import React, { useState } from 'react';
-import { Leaf, Truck, Sprout, Home, Users, Menu as MenuIcon, X } from 'lucide-react';
+import { Leaf, Truck, Sprout, Home, ShoppingCart, Menu as MenuIcon, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Sidebar({ open, setOpen }) {
@@ -18,6 +19,7 @@ export default function Sidebar({ open, setOpen }) {
     { label: 'Cosechas', icon: <Leaf size={22} />, path: '/cosechas' },
     { label: 'Camiones', icon: <Truck size={22} />, path: '/camiones' },
     { label: 'Siembras', icon: <Sprout size={22} />, path: '/siembras' },
+    { label: 'Stock/Ventas', icon: <ShoppingCart size={22} />, path: '/ventas' },  // <-- Nuevo ítem
   ];
 
   const handleNavigation = (path) => {
@@ -35,9 +37,14 @@ export default function Sidebar({ open, setOpen }) {
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
           <Leaf size={24} />
-          <span className="text-lg font-bold leading-tight">La Reina<br/>Don Felipe</span>
+          <span className="text-lg font-bold leading-tight">
+            La Reina<br />Don Felipe
+          </span>
         </div>
-        <button className="p-2 rounded hover:bg-[#1f4f33]" onClick={() => setOpen(false)}>
+        <button
+          className="p-2 rounded hover:bg-[#1f4f33]"
+          onClick={() => setOpen(false)}
+        >
           <X size={24} />
         </button>
       </div>
@@ -64,14 +71,23 @@ export default function Sidebar({ open, setOpen }) {
         collapsed ? 'w-16' : 'w-64'
       }`}
     >
-      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} p-4`}>
+      <div
+        className={`flex items-center ${
+          collapsed ? 'justify-center' : 'justify-between'
+        } p-4`}
+      >
         {!collapsed && (
           <div className="flex items-center gap-2">
             <Leaf size={24} />
-            <span className="text-lg font-bold leading-tight">La Reina<br/>Don Felipe</span>
+            <span className="text-lg font-bold leading-tight">
+              La Reina<br />Don Felipe
+            </span>
           </div>
         )}
-        <button className="p-2 rounded hover:bg-[#1f4f33]" onClick={() => setCollapsed(prev => !prev)}>
+        <button
+          className="p-2 rounded hover:bg-[#1f4f33]"
+          onClick={() => setCollapsed((prev) => !prev)}
+        >
           <MenuIcon size={24} className={collapsed ? 'rotate-180' : ''} />
         </button>
       </div>

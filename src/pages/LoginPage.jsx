@@ -14,21 +14,54 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // 1) Intentar iniciar sesión
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
+    if (authError) {
       // Traduce el mensaje de "Invalid login credentials"
-      if (error.message === 'Invalid login credentials') {
+      if (authError.message === 'Invalid login credentials') {
         setErrorMsg('Correo o contraseña inválidos');
       } else {
-        setErrorMsg(error.message);
+        setErrorMsg(authError.message);
       }
-    } else {
-      navigate('/inicio');
+      return;
     }
+
+    // 2) Si la autenticación fue exitosa, extraer el user
+    const user = data.user;
+    if (!user) {
+      setErrorMsg('No se pudo obtener información del usuario');
+      return;
+    }
+
+    // 3) Obtener el perfil desde la tabla "profiles"
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, permissions')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      setErrorMsg('No se encontró perfil de usuario o hubo un error');
+      return;
+    }
+
+    // 4) Armar el objeto usuario con role + permissions
+    const usuario = {
+      id: user.id,
+      email: user.email,
+      role: profile.role,
+      permissions: profile.permissions, // ej: { inicio:true, cosechas:true, ... }
+    };
+
+    // 5) Guardar en sessionStorage para que ProtectedRoute pueda leerlo
+    sessionStorage.setItem('usuario', JSON.stringify(usuario));
+
+    // 6) Redirigir a la página de inicio
+    navigate('/inicio');
   };
 
   return (
