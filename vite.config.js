@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  // rutas relativas: busca CSS, assets y scripts en la misma carpeta de index.html
+  // 1) USAR RUTAS RELATIVAS
   base: './',
   resolve: {
     alias: {
@@ -11,11 +11,12 @@ export default defineConfig({
     }
   },
   build: {
+    // 2) SALIDA en docs/
     outDir: 'docs',
-    // vuela tus assets (css, imágenes) al root de docs/
-    assetsDir: '',
-    // limpia docs/ antes de generar
-    emptyOutDir: true
+    // 3) LIMPIAR docs/ antes de build
+    emptyOutDir: true,
+    // 4) opcional: no crear docs/assets, vuela TODO a root de docs/
+    assetsDir: ''
   },
   plugins: [react()]
 })
