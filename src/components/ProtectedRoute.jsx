@@ -4,20 +4,21 @@ import { Navigate, useLocation, Outlet } from "react-router-dom";
 
 /**
  * ProtectedRoute ahora recibe:
- *    - permissionKey: la clave dentro de `permissions` en sessionStorage (ej. "cosechas", "siembras", "camiones", "ventas", etc.)
+ *    - permissionKey: la clave dentro de `permissions` en sessionStorage 
+ *      (ej. "cosechas", "siembras", "camiones", "ventas", "editor", etc.)
  *    - children (opcional; si no lo pasás, usará <Outlet />)
  *
  * - Si no hay sesión, redirige a /login.
- * - Si hay sesión pero user.permissions[permissionKey] !== true, redirige a /unauthorized.
+ * - Si permissionKey === 'editor', permite sólo al email manudifrancesco1@gmail.com.
+ * - Si hay sesión pero permissions[permissionKey] !== true, redirige a /unauthorized.
  * - Si todo OK, renderiza children ó <Outlet />.
  */
 export default function ProtectedRoute({ permissionKey, children }) {
   const location = useLocation();
 
-  // 1) Leo la sesión de sessionStorage
+  // 1) Leer sesión de sessionStorage
   const raw = sessionStorage.getItem("usuario");
   if (!raw) {
-    // No hay usuario → redirige a /login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -30,13 +31,21 @@ export default function ProtectedRoute({ permissionKey, children }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 2) Extraigo permissions / role
-  const { permissions } = usuario;
-  // Si no existe el objeto permissions o la clave permissionKey es false/undefined:
+  const { permissions, email } = usuario;
+
+  // 2) Caso especial para "editor"
+  if (permissionKey === "editor") {
+    if (email === "manudifrancesco1@gmail.com") {
+      return children ? <>{children}</> : <Outlet />;
+    }
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // 3) Chequear permisos normales
   if (!permissions || permissions[permissionKey] !== true) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 3) Si todo OK, renderizo children o <Outlet />
+  // 4) Si todo OK, renderizamos la ruta protegida
   return children ? <>{children}</> : <Outlet />;
 }

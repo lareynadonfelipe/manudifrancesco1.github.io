@@ -1,991 +1,784 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Edit, Trash2, Save, X, Plus, Filter } from "lucide-react";
+import { Plus, Filter } from "lucide-react";
 
 const defaultCultivos = ["Soja", "Maíz", "Trigo"];
+const acopios = ["AGD", "Bunge", "ACA"];
 const cosechas = ["23-24", "24-25"];
-const acopios = ["", "AGD", "Bunge", "ACA"];
+
 const formatNumber = (n) => (n || 0).toLocaleString("es-AR");
-
-const columns = ["fecha", "coe", "acopio", "cosecha", "kg", "precio", "observaciones"];
-
-const formatDate = (isoDate) => {
-  if (!isoDate) return "";
-  const [year, month, day] = isoDate.split("-");
-  return `${day}/${month}/${year}`;
+const formatDate = (iso) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
 };
-
-const formatPrice = (value) => {
-  if (value == null) return "";
-  return `$${Number(value).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
+const formatPrice = (v) =>
+  v == null
+    ? ""
+    : `$${Number(v).toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
 
 export default function VentasPage() {
+  // STOCK & VENTAS
   const [camionesData, setCamionesData] = useState([]);
   const [ventasTable, setVentasTable] = useState([]);
-  const [ventasCard, setVentasCard] = useState({});
-
-  const [cultivoSeleccionado, setCultivoSeleccionado] = useState(defaultCultivos[0]);
-  const [loadingCards, setLoadingCards] = useState(true);
-  const [errorCards, setErrorCards] = useState(null);
-
+  const [stockByCultivo, setStockByCultivo] = useState({});
+  const [loadingStock, setLoadingStock] = useState(true);
+  const [errorStock, setErrorStock] = useState(null);
   const [loadingTable, setLoadingTable] = useState(true);
   const [errorTable, setErrorTable] = useState(null);
-  const [selectedRowId, setSelectedRowId] = useState(null);
-  const [editingRowId, setEditingRowId] = useState(null);
+
+  // FORMS
+  const [showNew, setShowNew] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [editingData, setEditingData] = useState({});
 
-  const [showForm, setShowForm] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split("T")[0],
     acopio: "",
     cosecha: "",
-    cultivo: cultivoSeleccionado,
+    cultivo: "",
     coe: "",
     kg: "",
     precio: "",
     observaciones: "",
   });
-
-  const [mobileRow, setMobileRow] = useState(null);
-
-  // ** Estados para filtros **
   const [filterDesde, setFilterDesde] = useState("");
   const [filterHasta, setFilterHasta] = useState("");
   const [filterCoe, setFilterCoe] = useState("");
   const [filterAcopio, setFilterAcopio] = useState("");
   const [filterCosecha, setFilterCosecha] = useState("");
 
-  // Fetch ventas en tabla, ordenando por fecha descendente
+  // EXPAND CARD
+  const [expandedCultivo, setExpandedCultivo] = useState(null);
+
+  // FETCH VENTAS
+useEffect(() => {
+  (async () => {
+    setLoadingTable(true);
+    try {
+      const { data, error } = await supabase
+        .from("ventas")
+        .select("*")
+        .order("fecha", { ascending: false });  // <- ordena por fecha desc
+      if (error) throw error;
+      setVentasTable(
+        (data || [])
+          .map((r) => ({ ...r, observaciones: r.observaciones || "" }))
+      );
+    } catch (err) {
+      setErrorTable(err.message);
+    } finally {
+      setLoadingTable(false);
+    }
+  })();
+}, []);
+
+  // FETCH STOCK
   useEffect(() => {
     (async () => {
-      setLoadingTable(true);
-      setErrorTable(null);
+      setLoadingStock(true);
       try {
-        const { data, error } = await supabase.from("ventas").select("*");
+        const { data, error } = await supabase
+          .from("camiones")
+          .select("destino, kg_destino, cosecha:cosechas!inner(campania, cultivo)")
+          .eq("camion_para", "Cecilia");
         if (error) throw error;
-        const mapped = (data || [])
-          .map((r) => ({
-            id: r.id,
-            fecha: r.fecha,
-            acopio: r.acopio,
-            cosecha: r.cosecha,
-            cultivo: r.cultivo,
-            coe: r.coe,
-            kg: r.kg,
-            precio: r.precio,
-            observaciones: r.observaciones || "",
+        setCamionesData(
+          (data || []).map((r) => ({
+            destino: r.destino,
+            kg_destino: r.kg_destino,
+            cultivo: r.cosecha.cultivo,
+            campania: r.cosecha.campania,
           }))
-          .sort(
-            (a, b) =>
-              new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-          );
-        setVentasTable(mapped);
+        );
       } catch (err) {
-        setErrorTable(err.message);
+        setErrorStock(err.message);
       } finally {
-        setLoadingTable(false);
+        setLoadingStock(false);
       }
     })();
   }, []);
 
-  // Fetch camiones data
-  useEffect(() => {
-    (async () => {
-      setLoadingCards(true);
-      setErrorCards(null);
-      try {
-        const { data, error } = await supabase
-          .from("camiones")
-          .select("destino, kg_destino, cosecha:cosechas!inner(campania)")
-          .eq("camion_para", "Cecilia")
-          .eq("cosecha.cultivo", cultivoSeleccionado);
-        if (error) throw error;
-        setCamionesData(data || []);
-      } catch (err) {
-        setErrorCards(err.message);
-        setCamionesData([]);
-      } finally {
-        setLoadingCards(false);
-      }
-    })();
-  }, [cultivoSeleccionado]);
-
-  // Recalcula stock para cards
-  useEffect(() => {
-    const grouped = {};
-    camionesData.forEach(({ destino, kg_destino, cosecha }) => {
-      const key = destino || "Sin destino";
-      grouped[key] = grouped[key] || { total: 0, porCampania: {} };
-      grouped[key].total += kg_destino || 0;
-      const camp = cosecha?.campania || "Sin campaña";
-      grouped[key].porCampania[camp] =
-        (grouped[key].porCampania[camp] || 0) + (kg_destino || 0);
+ // CALCULAR STOCK
+useEffect(() => {
+  const grouped = {};
+  defaultCultivos.forEach((cult) => {
+    grouped[cult] = { totalsByAcopio: {}, byCampaniaAndAcopio: {} };
+    acopios.forEach((a) => (grouped[cult].totalsByAcopio[a] = 0));
+    cosechas.forEach((camp) => {
+      grouped[cult].byCampaniaAndAcopio[camp] = {};
+      acopios.forEach((a) => (grouped[cult].byCampaniaAndAcopio[camp][a] = 0));
     });
+  });
 
-    if (cultivoSeleccionado === "Soja") {
-      const BASE_STOCK = 631464;
-      const agdKey = "AGD";
-      const baseCamp = "23-24";
-      grouped[agdKey] = grouped[agdKey] || { total: 0, porCampania: {} };
-      grouped[agdKey].porCampania[baseCamp] =
-        (grouped[agdKey].porCampania[baseCamp] || 0) + BASE_STOCK;
-      grouped[agdKey].total += BASE_STOCK;
-    }
+  // 1) Stock traído de Supabase
+  camionesData.forEach(({ destino, kg_destino, cultivo, campania }) => {
+    if (!grouped[cultivo]) return;
+    grouped[cultivo].totalsByAcopio[destino] += kg_destino;
+    grouped[cultivo].byCampaniaAndAcopio[campania][destino] += kg_destino;
+  });
 
-    ventasTable
-      .filter((v) => v.cultivo === cultivoSeleccionado)
-      .forEach(({ acopio, kg, cosecha }) => {
-        if (grouped[acopio]) {
-          grouped[acopio].total = Math.max(0, grouped[acopio].total - kg);
-          if (grouped[acopio].porCampania[cosecha] != null) {
-            grouped[acopio].porCampania[cosecha] = Math.max(
-              0,
-              grouped[acopio].porCampania[cosecha] - kg
-            );
-          }
-        }
-      });
+  // 2) Stock manual base: 631.464 KG de Soja 23-24 en AGD
+  grouped["Soja"].totalsByAcopio["AGD"] += 631464;
+  grouped["Soja"].byCampaniaAndAcopio["23-24"]["AGD"] += 631464;
 
-    setVentasCard(grouped);
-  }, [camionesData, ventasTable, cultivoSeleccionado]);
+  // (Opcional) debug:
+  console.log(
+    "📊 Stock manual Soja 23-24 AGD:",
+    grouped["Soja"].byCampaniaAndAcopio["23-24"]["AGD"]
+  );
 
-  // Edit / Delete handlers
-  const handleEditClick = (row) => {
-    setSelectedRowId(row.id);
-    setEditingRowId(row.id);
-    setEditingData({ ...row });
-    setMobileRow(null);
-  };
-  const handleCancelEdit = () => {
-    setEditingRowId(null);
-    setEditingData({});
-  };
-  const handleSaveEdit = async () => {
-    try {
-      const payload = {
-        fecha: editingData.fecha,
-        acopio: editingData.acopio,
-        cosecha: editingData.cosecha,
-        cultivo: editingData.cultivo,
-        coe: editingData.coe,
-        kg: Number(editingData.kg),
-        precio: Number(editingData.precio),
-        observaciones: editingData.observaciones,
-      };
-      const { data, error } = await supabase
-        .from("ventas")
-        .update(payload)
-        .eq("id", editingRowId)
-        .select("*");
-      if (error) throw error;
-      const updated = {
-        ...data[0],
-        observaciones: data[0].observaciones || "",
-      };
-      setVentasTable((prev) =>
-        prev.map((r) => (r.id === editingRowId ? updated : r))
+  // 3) Restar las ventas
+  ventasTable.forEach(({ cultivo, acopio, kg, cosecha }) => {
+    if (
+      grouped[cultivo] &&
+      grouped[cultivo].totalsByAcopio[acopio] != null
+    ) {
+      grouped[cultivo].totalsByAcopio[acopio] = Math.max(
+        0,
+        grouped[cultivo].totalsByAcopio[acopio] - kg
       );
-      setEditingRowId(null);
-      setEditingData({});
-    } catch (err) {
-      alert(`Error al guardar: ${err.message}`);
     }
-  };
-  const handleDelete = async (row) => {
-    if (!window.confirm("¿Eliminar esta venta?")) return;
-    try {
-      const { error } = await supabase.from("ventas").delete().eq("id", row.id);
-      if (error) throw error;
-      setVentasTable((prev) => prev.filter((r) => r.id !== row.id));
-      setMobileRow(null);
-    } catch (err) {
-      alert(`Error al eliminar: ${err.message}`);
+    if (
+      grouped[cultivo] &&
+      grouped[cultivo].byCampaniaAndAcopio[cosecha] &&
+      grouped[cultivo].byCampaniaAndAcopio[cosecha][acopio] != null
+    ) {
+      grouped[cultivo].byCampaniaAndAcopio[cosecha][acopio] = Math.max(
+        0,
+        grouped[cultivo].byCampaniaAndAcopio[cosecha][acopio] - kg
+      );
     }
-  };
+  });
 
-  // Guardar nueva venta
-  const handleFormSubmit = async (e) => {
+  setStockByCultivo(grouped);
+}, [camionesData, ventasTable]);
+
+
+  // NUEVA VENTA
+  const submitNew = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        fecha: formData.fecha,
-        acopio: formData.acopio,
-        cosecha: formData.cosecha,
-        cultivo: formData.cultivo,
-        coe: formData.coe,
-        kg: Number(formData.kg),
-        precio: Number(formData.precio),
-        observaciones: formData.observaciones,
-      };
-      const { data: newRows, error } = await supabase
+      const { data, error } = await supabase
         .from("ventas")
-        .insert([payload])
+        .insert([
+          {
+            ...formData,
+            kg: Number(formData.kg),
+            precio: Number(formData.precio),
+          },
+        ])
         .select("*");
       if (error) throw error;
-      const added = {
-        id: newRows[0].id,
-        fecha: newRows[0].fecha,
-        acopio: newRows[0].acopio,
-        cosecha: newRows[0].cosecha,
-        cultivo: newRows[0].cultivo,
-        coe: newRows[0].coe,
-        kg: newRows[0].kg,
-        precio: newRows[0].precio,
-        observaciones: newRows[0].observaciones || "",
-      };
-      setVentasTable((prev) => [added, ...prev]);
-      setShowForm(false);
+      setVentasTable((v) => [data[0], ...v]);
+      setShowNew(false);
+      setFormData({
+        fecha: new Date().toISOString().split("T")[0],
+        acopio: "",
+        cosecha: "",
+        cultivo: "",
+        coe: "",
+        kg: "",
+        precio: "",
+        observaciones: "",
+      });
     } catch (err) {
-      alert("No se pudo guardar: " + err.message);
+      alert(err.message);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // EDICIÓN
+  const startEdit = (row) => {
+    setEditingId(row.id);
+    setEditingData({ ...row });
+    setShowNew(false);
+    setShowFilters(false);
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingData({});
+  };
+  const saveEdit = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ventas")
+        .update({
+          ...editingData,
+          kg: Number(editingData.kg),
+          precio: Number(editingData.precio),
+        })
+        .eq("id", editingId)
+        .select("*");
+      if (error) throw error;
+      setVentasTable((v) => v.map((r) => (r.id === editingId ? data[0] : r)));
+      cancelEdit();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+  const deleteEdit = async () => {
+    if (!confirm("¿Eliminar registro?")) return;
+    await supabase.from("ventas").delete().eq("id", editingId);
+    setVentasTable((v) => v.filter((r) => r.id !== editingId));
+    cancelEdit();
   };
 
-  // ** Lógica de filtrado **
-  const filteredVentas = ventasTable
-    .filter((row) => row.cultivo === cultivoSeleccionado)
-    .filter((row) => {
-      if (filterDesde && new Date(row.fecha) < new Date(filterDesde)) return false;
-      if (filterHasta && new Date(row.fecha) > new Date(filterHasta)) return false;
-      if (filterCoe && !row.coe.toLowerCase().includes(filterCoe.toLowerCase())) return false;
-      if (filterAcopio && row.acopio !== filterAcopio) return false;
-      if (filterCosecha && row.cosecha !== filterCosecha) return false;
-      return true;
-    });
+// FILTRAR VENTAS
+const filtered = ventasTable.filter((r) => {
+  if (filterDesde && new Date(r.fecha) < new Date(filterDesde)) return false;
+  if (filterHasta && new Date(r.fecha) > new Date(filterHasta)) return false;
+  if (filterCoe && !r.coe.includes(filterCoe)) return false;
+  if (filterAcopio && r.acopio !== filterAcopio) return false;
+  if (filterCosecha && r.cosecha !== filterCosecha) return false;
+  return true;
+});
+
+// Totales de kg y precio promedio
+const totalKg = filtered.reduce((sum, r) => sum + Number(r.kg), 0);
+const avgPrecio =
+  filtered.length > 0
+    ? filtered.reduce((sum, r) => sum + Number(r.precio), 0) / filtered.length
+    : 0;
+
 
   return (
-    <div className="px-4 py-2">
-      {/* 1) BLOQUE DE CULTIVO */}
-      <div className="mb-4 flex border-b">
-        {defaultCultivos.map((cult) => (
-          <button
-            key={cult}
-            onClick={() => {
-              setCultivoSeleccionado(cult);
-              if (!showForm) {
-                setFormData((prev) => ({ ...prev, cultivo: cult }));
-              }
-            }}
-            className={`
-              flex-1 text-center py-2 font-medium
-              sm:flex-none sm:px-4 sm:py-2
-              ${
-                cultivoSeleccionado === cult
-                  ? "text-green-800 border-b-2 border-green-800"
-                  : "text-gray-600 hover:text-gray-800"
-              }
-            `}
-          >
-            {cult}
-          </button>
-        ))}
-      </div>
+    <div className="px-6 py-4 space-y-8">
+{/* STOCK CARDS */}
+{loadingStock ? (
+  <p className="text-gray-500">Cargando stock…</p>
+) : errorStock ? (
+  <p className="text-red-500">{errorStock}</p>
+) : (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {defaultCultivos.map((cultivo) => {
+      const { totalsByAcopio, byCampaniaAndAcopio } =
+        stockByCultivo[cultivo] || {};
+      const sum = Object.values(totalsByAcopio || {}).reduce(
+        (a, b) => a + b,
+        0
+      );
+      const open = expandedCultivo === cultivo;
+      const camps = cosechas.filter((c) =>
+        acopios.some((a) => byCampaniaAndAcopio?.[c]?.[a] > 0)
+      );
 
-      {/* Cards de Stock */}
-      {loadingCards ? (
-        <p className="text-gray-500 mb-8">Cargando stock...</p>
-      ) : errorCards ? (
-        <p className="text-red-500 mb-8">Error: {errorCards}</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {Object.entries(ventasCard).map(([dest, { total, porCampania }]) => (
-            <div key={dest} className="bg-white shadow rounded-lg p-6">
-              <div className="flex justify-between mb-2">
-                <h3 className="font-semibold text-lg">{dest}</h3>
-                <p className="text-green-600 font-bold text-lg">
-                  {formatNumber(total)} KG
-                </p>
-              </div>
-              <hr className="border-gray-200 my-4" />
-              {Object.entries(porCampania).map(([camp, kg]) => (
-                <div key={camp} className="flex justify-between text-base">
-                  <span>{camp}</span>
-                  <span>{formatNumber(kg)} KG</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 2) FORMULARIO MÓVIL A PANTALLA COMPLETA */}
-      {showForm && (
-        <div className="fixed inset-0 bg-white p-4 z-50 sm:hidden overflow-auto">
-          <button
-            onClick={() => setShowForm(false)}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          >
-            <X size={24} />
-          </button>
-          <h3 className="text-green-800 font-semibold mb-4 text-lg">Nueva Venta</h3>
-          <form onSubmit={handleFormSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium">Fecha</label>
-                <input
-                  type="date"
-                  name="fecha"
-                  value={formData.fecha}
-                  onChange={handleInputChange}
-                  className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">COE</label>
-                <input
-                  type="text"
-                  name="coe"
-                  value={formData.coe}
-                  onChange={handleInputChange}
-                  className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Acopio</label>
-              <div className="grid grid-cols-3 gap-2">
-                {acopios.slice(1).map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() =>
-                      setFormData((p) => ({ ...p, acopio: opt }))
-                    }
-                    className={`border px-3 py-1 rounded text-sm ${
-                      formData.acopio === opt
-                        ? "bg-green-600 text-white"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Cosecha</label>
-              <div className="grid grid-cols-2 gap-2">
-                {cosechas.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() =>
-                      setFormData((p) => ({ ...p, cosecha: opt }))
-                    }
-                    className={`border px-3 py-1 rounded text-sm ${
-                      formData.cosecha === opt
-                        ? "bg-green-600 text-white"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Cultivo</label>
-              <div className="grid grid-cols-3 gap-2">
-                {defaultCultivos.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() =>
-                      setFormData((p) => ({ ...p, cultivo: opt }))
-                    }
-                    className={`border px-3 py-1 rounded text-sm ${
-                      formData.cultivo === opt
-                        ? "bg-green-600 text-white"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium">Cantidad (Kg)</label>
-                <input
-                  type="text"
-                  name="kg"
-                  value={formData.kg}
-                  onChange={handleInputChange}
-                  className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-right appearance-none text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Precio/Kg</label>
-                <input
-                  type="text"
-                  name="precio"
-                  value={formData.precio}
-                  onChange={handleInputChange}
-                  className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-right appearance-none text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">Observaciones</label>
-              <input
-                type="text"
-                name="observaciones"
-                value={formData.observaciones}
-                onChange={handleInputChange}
-                className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-sm"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors hover:bg-green-700"
-            >
-              Guardar
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* 3) ACCIONES MÓVILES A PANTALLA COMPLETA */}
-      {mobileRow && (
-        <div className="fixed inset-0 bg-white p-4 z-50 sm:hidden overflow-auto">
-          <button
-            onClick={() => setMobileRow(null)}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          >
-            <X size={24} />
-          </button>
-          <h3 className="text-green-800 font-semibold mb-4 text-lg">
-            Opciones para venta
-          </h3>
-          <div className="space-y-2">
-            <p>
-              <span className="font-medium">Fecha:</span>{" "}
-              {formatDate(mobileRow.fecha)}
-            </p>
-            <p>
-              <span className="font-medium">Acopio:</span> {mobileRow.acopio}
-            </p>
-            <p>
-              <span className="font-medium">Cosecha:</span> {mobileRow.cosecha}
-            </p>
-            <p>
-              <span className="font-medium">COE:</span> {mobileRow.coe}
-            </p>
-            <p>
-              <span className="font-medium">Cantidad:</span>{" "}
-              {formatNumber(mobileRow.kg)} Kg
-            </p>
-            <p>
-              <span className="font-medium">Precio/Kg:</span>{" "}
-              {formatPrice(mobileRow.precio)}
-            </p>
-            {mobileRow.observaciones && (
-              <p>
-                <span className="font-medium">Observaciones:</span>{" "}
-                {mobileRow.observaciones}
-              </p>
+      return (
+        <div
+          key={cultivo}
+          className="bg-white rounded-lg shadow overflow-hidden cursor-pointer"
+          onClick={() => setExpandedCultivo(open ? null : cultivo)}
+        >
+          {/* Header */}
+          <div className="px-6 py-4 flex justify-between items-center">
+            <h3 className="text-xl font-semibold">{cultivo}</h3>
+            {sum > 0 ? (
+              <span className="text-green-700 font-extrabold text-2xl">
+                {formatNumber(sum)} KG
+              </span>
+            ) : (
+              <span className="italic text-gray-400">Sin stock</span>
             )}
           </div>
-          <div className="mt-6 flex justify-center space-x-6">
-            <button
-              onClick={() => handleEditClick(mobileRow)}
-              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              <Edit size={20} />
-              <span>Editar</span>
-            </button>
-            <button
-              onClick={() => handleDelete(mobileRow)}
-              className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              <Trash2 size={20} />
-              <span>Eliminar</span>
-            </button>
+
+          {/* Divider */}
+          <hr className="border-gray-200 mx-6" />
+
+          {/* Body */}
+          <div className="px-6 py-4">
+            {!open ? (
+              /* ——— VISTA COLAPSADA: filas de acopios ——— */
+              <ul className="space-y-1">
+                {acopios.map((a) => {
+                  const k = totalsByAcopio?.[a] || 0;
+                  return (
+                    <li key={a} className="flex justify-between py-1">
+                      <span className="text-base font-medium text-gray-800">
+                        {a}
+                      </span>
+                      <span className="text-base font-semibold text-gray-900">
+                        {k > 0 ? `${formatNumber(k)} KG` : "—"}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              /* ——— VISTA EXPANDIDA: tabla por cosecha ——— */
+              <div className="overflow-auto">
+                <table className="min-w-full table-auto">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="p-2 text-left text-sm text-gray-500">
+                        Acopio
+                      </th>
+                      {camps.map((c) => (
+                        <th
+                          key={c}
+                          className="p-2 text-right text-sm text-gray-500"
+                        >
+                          {c}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {acopios.map((a) => (
+                      <tr key={a}>
+                        <td className="p-2 text-sm font-medium text-gray-800">
+                          {a}
+                        </td>
+                        {camps.map((c) => (
+                          <td
+                            key={c}
+                            className="p-2 text-right text-base font-semibold text-gray-900"
+                          >
+                            {formatNumber(
+                              byCampaniaAndAcopio[c]?.[a] || 0
+                            )}{" "}
+                            KG
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      );
+    })}
+  </div>
+)}
 
-      {/* 4) TABLA & FORM */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-2">
-        {/* En móvil: botones Nueva Venta & Filtrar Ventas */}
-        <div className="sm:hidden mb-2">
-          {!showForm && !mobileRow && (
-            <>
-              <button
-                onClick={() => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    cultivo: cultivoSeleccionado,
-                    coe: "",
-                    observaciones: "",
-                  }));
-                  setShowForm(true);
-                }}
-                className="
-                  w-full flex items-center justify-center gap-2
-                  bg-green-600 hover:bg-green-700 text-white
-                  rounded-lg px-4 py-2 text-sm font-medium
-                  shadow-sm transition-colors
-                  focus:outline-none focus:ring-2 focus:ring-green-400
-                "
-              >
-                <Plus size={16} />
-                Nueva Venta
-              </button>
 
-              <button
-                onClick={() => setShowFilters((prev) => !prev)}
-                className="
-                  mt-2 w-full flex items-center justify-center gap-2
-                  border border-green-600 text-green-600 bg-white
-                  rounded-lg px-4 py-2 text-sm font-medium
-                  shadow-sm transition-colors
-                  hover:bg-green-50 hover:border-green-500
-                  focus:outline-none focus:ring-2 focus:ring-green-400
-                "
-              >
-                <Filter size={16} />
-                {showFilters ? "Ocultar filtros" : "Filtrar Ventas"}
-              </button>
-            </>
-          )}
-        </div>
 
-        {/* Contenedor de la tabla */}
-        <div className="flex-1 bg-white shadow rounded-lg overflow-hidden">
-          {/* Encabezado */}
-          <div className="px-4 py-2 bg-gray-100 border-b">
-            <h3 className="uppercase text-green-800 text-sm font-semibold">
+      {/* DOS COLUMNAS */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* TABLA DE VENTAS */}
+        <div className="flex-1 bg-white shadow rounded overflow-hidden">
+          <div className="px-4 py-3 bg-gray-100 border-b">
+            {/* Título más pequeño */}
+            <h3 className="uppercase text-green-800 text-lg font-semibold">
               Ventas
             </h3>
           </div>
-
           {loadingTable ? (
-            <div className="p-4 text-center text-gray-500">Cargando ventas...</div>
+            <p className="p-6 text-center text-gray-500">Cargando…</p>
           ) : errorTable ? (
-            <div className="p-4 text-center text-red-500">{errorTable}</div>
+            <p className="p-6 text-center text-red-500">{errorTable}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 rounded-b-lg">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {columns.map((col) => (
+                    {[
+                      { key: "fecha", label: "Fecha" },
+                      { key: "acopio", label: "Acopio" },
+                      { key: "cultivo", label: "Cultivo" },
+                      { key: "cosecha", label: "Cosecha" },
+                      { key: "kg", label: "Cantidad" },
+                      { key: "precio", label: "Precio/Kg" },
+                      { key: "coe", label: "COE", less: true },
+                      { key: "observaciones", label: "Observaciones", less: true },
+                    ].map(({ key, label, less }) => (
                       <th
-                        key={col}
-                        className={`px-4 py-4 text-xs font-bold uppercase ${
-                          col === "kg" || col === "precio" || col === "observaciones"
+                        key={key}
+                        className={`px-4 py-2 uppercase ${
+                          less ? "text-sm text-gray-500" : "text-sm font-bold text-gray-700"
+                        } sticky top-0 bg-gray-50 ${
+                          ["kg", "precio", "coe", "observaciones"].includes(key)
                             ? "text-right"
                             : "text-left"
-                        } sticky top-0 bg-gray-50`}
-                        style={{ zIndex: 10 }}
+                        }`}
                       >
-                        {col === "kg"
-                          ? "Cantidad"
-                          : col === "precio"
-                          ? "Precio/Kg"
-                          : col === "coe"
-                          ? "COE"
-                          : col === "observaciones"
-                          ? "Observaciones"
-                          : col.toUpperCase()}
+                        {label}
                       </th>
                     ))}
-                    <th
-                      className="px-4 py-4 text-xs font-bold uppercase text-center sticky top-0 bg-gray-50"
-                      style={{ zIndex: 10 }}
-                    >
-                      Acciones
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredVentas.map((row) => (
-                    <tr
-                      key={row.id}
-                      onClick={() => {
-                        if (window.innerWidth < 640) {
-                          setMobileRow(row);
-                        } else {
-                          setSelectedRowId((prev) =>
-                            prev === row.id ? null : row.id
-                          );
-                        }
-                      }}
-                      className={`cursor-pointer ${
-                        selectedRowId === row.id
-                          ? "bg-gray-100"
-                          : "hover:bg-gray-100"
-                      }`}
-                    >
-                      {columns.map((col) => (
-                        <td
-                          key={col}
-                          className={`px-4 py-1 ${
-                            col === "kg" || col === "precio" || col === "observaciones"
-                              ? "text-right"
-                              : "text-left"
-                          }`}
-                        >
-                          {editingRowId === row.id ? (
-                            <input
-                              type="text"
-                              name={col}
-                              value={editingData[col] || ""}
-                              onChange={(e) =>
-                                setEditingData((p) => ({
-                                  ...p,
-                                  [col]: e.target.value,
-                                }))
-                              }
-                              className="w-full border-b focus:outline-none text-right appearance-none text-sm"
-                            />
-                          ) : (
-                            <>
-                              {col === "fecha"
-                                ? formatDate(row.fecha)
-                                : col === "kg"
-                                ? `${formatNumber(row.kg)} Kg`
-                                : col === "precio"
-                                ? formatPrice(row.precio)
-                                : col === "coe"
-                                ? row.coe
-                                : col === "observaciones"
-                                ? row.observaciones
-                                : row[col]}
-                            </>
-                          )}
-                        </td>
-                      ))}
-                      <td className="px-4 py-1 text-right">
-                        <div className="flex w-full justify-end items-center space-x-2 h-8">
-                          {editingRowId === row.id ? (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSaveEdit();
-                                }}
-                              >
-                                <Save size={18} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCancelEdit();
-                                }}
-                              >
-                                <X size={18} />
-                              </button>
-                            </>
-                          ) : selectedRowId === row.id ? (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditClick(row);
-                                }}
-                              >
-                                <Edit size={18} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(row);
-                                }}
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </>
-                          ) : (
-                            <div className="w-full h-full"></div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+  {filtered.map((r) => (
+    <tr
+      key={r.id}
+      onClick={() => startEdit(r)}
+      className="cursor-pointer hover:bg-gray-100"
+    >
+      <td className="px-4 py-2">{formatDate(r.fecha)}</td>
+      <td className="px-4 py-2">{r.acopio}</td>
+      <td className="px-4 py-2">{r.cultivo}</td>
+      <td className="px-4 py-2">{r.cosecha}</td>
+      <td className="px-4 py-2 text-right">{formatNumber(r.kg)} KG</td>
+      <td className="px-4 py-2 text-right">{formatPrice(r.precio)}</td>
+      <td className="px-4 py-2 text-sm text-gray-500 text-right">{r.coe}</td>
+      <td className="px-4 py-2 text-sm text-gray-500 text-right">{r.observaciones}</td>
+    </tr>
+  ))}
+
+  {/* FILA DE TOTALES */}
+  <tr className="bg-gray-100 font-semibold">
+    <td className="px-4 py-2">Totales</td>
+    <td className="px-4 py-2"></td>
+    <td className="px-4 py-2"></td>
+    <td className="px-4 py-2"></td>
+    <td className="px-4 py-2 text-right">{formatNumber(totalKg)} KG</td>
+    <td className="px-4 py-2 text-right">{formatPrice(avgPrecio)}</td>
+    <td className="px-4 py-2"></td>
+    <td className="px-4 py-2"></td>
+  </tr>
+</tbody>
+
               </table>
             </div>
           )}
         </div>
 
-        {/* 5) FORMULARIO ESCRITORIO */}
-        <div className="hidden sm:block w-full sm:w-80 flex-shrink-0">
-          {/* Botón Nueva Venta o Formulario */}
-          {!mobileRow && (
-            <>
-              {!showForm && (
-                <button
-                  onClick={() => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      cultivo: cultivoSeleccionado,
-                      coe: "",
-                      observaciones: "",
-                    }));
-                    setShowForm(true);
-                  }}
-                  className="
-                    mb-4 w-full flex items-center justify-center gap-2
-                    bg-green-600 hover:bg-green-700 text-white
-                    rounded-lg px-4 py-2 text-sm font-medium
-                    shadow-sm transition-colors
-                    focus:outline-none focus:ring-2 focus:ring-green-400
-                  "
-                >
-                  <Plus size={16} />
-                  Nueva Venta
-                </button>
-              )}
-
-              {showForm && (
-                <div className="bg-white shadow rounded-lg border p-4 mb-4 relative">
-                  <button
-                    onClick={() => setShowForm(false)}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        {/* CONTROLES + FORMULARIOS */}
+        <div className="w-full lg:w-80 space-y-4 flex-shrink-0">
+          {/* EDITAR VENTA */}
+          {editingId && (
+            <div className="bg-white shadow rounded-lg border p-6">
+              <h4 className="text-2xl font-bold mb-4">Editar Venta</h4>
+              <form className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Fecha
+                  <input
+                    type="date"
+                    value={editingData.fecha}
+                    onChange={(e) =>
+                      setEditingData((d) => ({ ...d, fecha: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  COE
+                  <input
+                    type="text"
+                    value={editingData.coe}
+                    onChange={(e) =>
+                      setEditingData((d) => ({ ...d, coe: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Acopio
+                  <select
+                    value={editingData.acopio}
+                    onChange={(e) =>
+                      setEditingData((d) => ({ ...d, acopio: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
                   >
-                    <X size={20} />
+                    {acopios.map((a) => (
+                      <option key={a}>{a}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cosecha
+                  <input
+                    type="text"
+                    value={editingData.cosecha}
+                    onChange={(e) =>
+                      setEditingData((d) => ({
+                        ...d,
+                        cosecha: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cultivo
+                  <select
+                    value={editingData.cultivo}
+                    onChange={(e) =>
+                      setEditingData((d) => ({ ...d, cultivo: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  >
+                    {defaultCultivos.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Cantidad (Kg)
+                    <input
+                      type="text"
+                      value={editingData.kg}
+                      onChange={(e) =>
+                        setEditingData((d) => ({ ...d, kg: e.target.value }))
+                      }
+                      className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent text-right"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Precio/Kg
+                    <input
+                      type="text"
+                      value={editingData.precio}
+                      onChange={(e) =>
+                        setEditingData((d) => ({ ...d, precio: e.target.value }))
+                      }
+                      className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent text-right"
+                    />
+                  </label>
+                </div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Observaciones
+                  <input
+                    type="text"
+                    value={editingData.observaciones}
+                    onChange={(e) =>
+                      setEditingData((d) => ({
+                        ...d,
+                        observaciones: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full border rounded px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="px-4 py-2 border rounded text-base"
+                  >
+                    Cancelar
                   </button>
-                  <h3 className="text-green-800 font-semibold mb-4">Nueva Venta</h3>
-                  <form onSubmit={handleFormSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium">Fecha</label>
-                        <input
-                          type="date"
-                          name="fecha"
-                          value={formData.fecha}
-                          onChange={handleInputChange}
-                          className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium">COE</label>
-                        <input
-                          type="text"
-                          name="coe"
-                          value={formData.coe}
-                          onChange={handleInputChange}
-                          className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Acopio</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {acopios.slice(1).map((opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() =>
-                              setFormData((p) => ({ ...p, acopio: opt }))
-                            }
-                            className={`border px-3 py-1 rounded text-sm ${
-                              formData.acopio === opt
-                                ? "bg-green-600 text-white"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Cosecha</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {cosechas.map((opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() =>
-                              setFormData((p) => ({ ...p, cosecha: opt }))
-                            }
-                            className={`border px-3 py-1 rounded text-sm ${
-                              formData.cosecha === opt
-                                ? "bg-green-600 text-white"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Cultivo</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {defaultCultivos.map((opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() =>
-                              setFormData((p) => ({ ...p, cultivo: opt }))
-                            }
-                            className={`border px-3 py-1 rounded text-sm ${
-                              formData.cultivo === opt
-                                ? "bg-green-600 text-white"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium">Cantidad (Kg)</label>
-                        <input
-                          type="text"
-                          name="kg"
-                          value={formData.kg}
-                          onChange={handleInputChange}
-                          className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-right appearance-none text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium">Precio/Kg</label>
-                        <input
-                          type="text"
-                          name="precio"
-                          value={formData.precio}
-                          onChange={handleInputChange}
-                          className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-right appearance-none text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium">Observaciones</label>
-                      <input
-                        type="text"
-                        name="observaciones"
-                        value={formData.observaciones}
-                        onChange={handleInputChange}
-                        className="mt-1 w-full border rounded px-2 py-1 focus:outline-none text-sm"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors hover:bg-green-700"
-                    >
-                      Guardar
-                    </button>
-                  </form>
+                  <button
+                    type="button"
+                    onClick={deleteEdit}
+                    className="px-4 py-2 bg-red-600 text-white rounded text-base"
+                  >
+                    Eliminar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEdit}
+                    className="px-4 py-2 bg-green-600 text-white rounded text-base"
+                  >
+                    Guardar
+                  </button>
                 </div>
-              )}
-            </>
+              </form>
+            </div>
           )}
 
-          {/* Botón Filtrar Ventas */}
-          {!mobileRow && (
-            <button
-              onClick={() => setShowFilters((prev) => !prev)}
-              className="
-                mb-4 w-full flex items-center justify-center gap-2
-                border border-green-600 text-green-600 bg-white
-                rounded-lg px-4 py-2 text-sm font-medium
-                shadow-sm transition-colors
-                hover:bg-green-50 hover:border-green-500
-                focus:outline-none focus:ring-2 focus:ring-green-400
-              "
-            >
-              <Filter size={16} />
-              {showFilters ? "Ocultar filtros" : "Filtrar Ventas"}
-            </button>
+          {/* NUEVA VENTA */}
+          <button
+            onClick={() => {
+              setShowNew((v) => !v);
+              setShowFilters(false);
+              cancelEdit();
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-3 text-base font-medium"
+          >
+            <Plus size={18} /> Nueva Venta
+          </button>
+          {showNew && (
+            <div className="bg-white shadow rounded-lg border p-4">
+              <h4 className="text-xl font-bold mb-3">Agregar Venta</h4>
+              <form onSubmit={submitNew} className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Fecha
+                  <input
+                    type="date"
+                    name="fecha"
+                    value={formData.fecha}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, fecha: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  COE
+                  <input
+                    type="text"
+                    name="coe"
+                    value={formData.coe}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, coe: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Acopio
+                  <select
+                    name="acopio"
+                    value={formData.acopio}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, acopio: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  >
+                    <option value="">Seleccione</option>
+                    {acopios.map((a) => (
+                      <option key={a}>{a}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cosecha
+                  <input
+                    type="text"
+                    name="cosecha"
+                    value={formData.cosecha}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, cosecha: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cultivo
+                  <select
+                    name="cultivo"
+                    value={formData.cultivo}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, cultivo: e.target.value }))
+                    }
+                    className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  >
+                    <option value="">Seleccione</option>
+                    {defaultCultivos.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Kg
+                    <input
+                      type="text"
+                      name="kg"
+                      value={formData.kg}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, kg: e.target.value }))
+                      }
+                      className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent text-right"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Precio/Kg
+                    <input
+                      type="text"
+                      name="precio"
+                      value={formData.precio}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, precio: e.target.value }))
+                      }
+                      className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent text-right"
+                    />
+                  </label>
+                </div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Observaciones
+                  <input
+                    type="text"
+                    name="observaciones"
+                    value={formData.observaciones}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        observaciones: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  />
+                </label>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(false)}
+                    className="px-3 py-1 border rounded text-base"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1 bg-green-600 text-white rounded text-base"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
-          {/* Formulario de filtros desplegable */}
-          {!mobileRow && showFilters && (
-            <div className="bg-white shadow rounded-lg border p-4 mb-4">
-              {/* Fecha Desde / Hasta */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-medium">Fecha Desde</label>
-                  <input
-                    type="date"
-                    value={filterDesde}
-                    onChange={(e) => setFilterDesde(e.target.value)}
-                    className="mt-1 w-full border rounded px-2 py-1 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium">Fecha Hasta</label>
-                  <input
-                    type="date"
-                    value={filterHasta}
-                    onChange={(e) => setFilterHasta(e.target.value)}
-                    className="mt-1 w-full border rounded px-2 py-1 text-xs"
-                  />
-                </div>
-              </div>
-
-              {/* COE */}
-              <div className="mb-4">
-                <label className="block text-xs font-medium">COE</label>
+          {/* FILTRAR VENTAS */}
+          <button
+            onClick={() => {
+              setShowFilters((v) => !v);
+              setShowNew(false);
+              cancelEdit();
+            }}
+            className="w-full flex items-center justify-center gap-2 border border-green-600 text-green-600 rounded-lg px-4 py-3 text-base font-medium"
+          >
+            <Filter size={18} /> Filtrar Ventas
+          </button>
+          {showFilters && (
+            <div className="bg-white shadow rounded-lg border p-4 space-y-3">
+              <h4 className="text-xl font-bold mb-2">Filtros</h4>
+              <label className="block text-sm font-medium text-gray-700">
+                Fecha Desde
+                <input
+                  type="date"
+                  value={filterDesde}
+                  onChange={(e) => setFilterDesde(e.target.value)}
+                  className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                />
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Fecha Hasta
+                <input
+                  type="date"
+                  value={filterHasta}
+                  onChange={(e) => setFilterHasta(e.target.value)}
+                  className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                />
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                COE
                 <input
                   type="text"
-                  placeholder="Buscar COE"
                   value={filterCoe}
                   onChange={(e) => setFilterCoe(e.target.value)}
-                  className="mt-1 w-full border rounded px-2 py-1 text-xs"
+                  className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
                 />
-              </div>
-
-              {/* Acopio y Cosecha */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-medium">Acopio</label>
-                  <select
-                    value={filterAcopio}
-                    onChange={(e) => setFilterAcopio(e.target.value)}
-                    className="mt-1 w-full border rounded px-2 py-1 text-xs"
-                  >
-                    {acopios.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt === "" ? "Todos" : opt}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium">Cosecha</label>
-                  <select
-                    value={filterCosecha}
-                    onChange={(e) => setFilterCosecha(e.target.value)}
-                    className="mt-1 w-full border rounded px-2 py-1 text-xs"
-                  >
-                    <option value="">Todos</option>
-                    {cosechas.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Botón Limpiar filtros */}
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Acopio
+                <select
+                  value={filterAcopio}
+                  onChange={(e) => setFilterAcopio(e.target.value)}
+                  className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                >
+                  <option value="">Todos</option>
+                  {acopios.map((a) => (
+                    <option key={a}>{a}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Cosecha
+                <input
+                  type="text"
+                  value={filterCosecha}
+                  onChange={(e) => setFilterCosecha(e.target.value)}
+                  className="mt-1 w-full border rounded px-2 py-1 text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                />
+              </label>
               <button
                 onClick={() => {
                   setFilterDesde("");
@@ -994,7 +787,7 @@ export default function VentasPage() {
                   setFilterAcopio("");
                   setFilterCosecha("");
                 }}
-                className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded text-xs hover:bg-gray-300"
+                className="w-full bg-gray-200 px-3 py-1 rounded text-base"
               >
                 Limpiar filtros
               </button>
