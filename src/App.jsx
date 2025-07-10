@@ -1,70 +1,59 @@
-// src/App.jsx
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import MainLayout from "./layouts/MainLayout";
-import Inicio from "./pages/Inicio";
-import CosechasPage from "./pages/CosechasPage";
-import SiembrasPage from "./pages/SiembrasPage";
-import CamionesPage from "./pages/CamionesPage";
-import VentasPage from "./pages/VentasPage";
-import CalculadoraPage from "./pages/CalculadoraPage";
-import EditorPage from "./pages/EditorPage";
+import LoginPage         from "./pages/LoginPage";
+import MainLayout        from "./layouts/MainLayout";
+import Inicio            from "./pages/Inicio";
+import CosechasPage      from "./pages/CosechasPage";
+import SiembrasPage      from "./pages/SiembrasPage";
+import CamionesPage      from "./pages/CamionesPage";
+import VentasPage        from "./pages/VentasPage";
+import CalculadoraPage   from "./pages/CalculadoraPage";
+import EditorPage        from "./pages/EditorPage";
 import PlanillasCosechas from "./pages/PlanillasCosechas";
-import IngresoAcopios from "./pages/IngresoAcopios";
-import CargarDatosPage from "./pages/CargarDatosPage";
-import UnauthorizedPage from "./pages/UnauthorizedPage";
-import ProtectedRoute from "./components/ProtectedRoute";
+import IngresoAcopios    from "./pages/IngresoAcopios";
+import UnauthorizedPage  from "./pages/UnauthorizedPage";
+import ProtectedRoute    from "./components/ProtectedRoute";
 
 export default function App() {
   return (
     <Routes>
-      {/* Ruta pública de login */}
+      {/* 1) Login (público) */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Layout principal para rutas protegidas */}
+      {/* 2) Rutas que requieren login */}
       <Route element={<MainLayout />}>
-        {/* Inicio */}
+        {/* 2.1 Calculadora: solo exige autenticación */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/calculadora" element={<CalculadoraPage />} />
+        </Route>
+
+        {/* 2.2 Rutas con permiso específico */}
         <Route element={<ProtectedRoute permissionKey="inicio" />}>
           <Route path="/inicio" element={<Inicio />} />
         </Route>
-
-        {/* Cosechas */}
         <Route element={<ProtectedRoute permissionKey="cosechas" />}>
           <Route path="/cosechas" element={<CosechasPage />} />
         </Route>
-
-        {/* Siembras */}
         <Route element={<ProtectedRoute permissionKey="siembras" />}>
           <Route path="/siembras" element={<SiembrasPage />} />
         </Route>
-
-        {/* Camiones */}
         <Route element={<ProtectedRoute permissionKey="camiones" />}>
           <Route path="/camiones" element={<CamionesPage />} />
         </Route>
-
-        {/* Ventas */}
         <Route element={<ProtectedRoute permissionKey="ventas" />}>
           <Route path="/ventas" element={<VentasPage />} />
         </Route>
-
-        {/* Calculadora: solo autenticación, sin control de permiso específico */}
-        <Route path="/calculadora" element={<ProtectedRoute><CalculadoraPage /></ProtectedRoute>} />
-
-        {/* Editor y páginas asociadas */}
         <Route element={<ProtectedRoute permissionKey="editor" />}>
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/planillas-cosechas" element={<PlanillasCosechas />} />
           <Route path="/ingreso-acopios" element={<IngresoAcopios />} />
-          <Route path="/cargar-datos" element={<CargarDatosPage />} />
         </Route>
 
-        {/* Acceso denegado */}
+        {/* 2.3 Acceso denegado */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
-      {/* Fallback a login */}
+      {/* 3) Fallback: todo lo demás va a login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

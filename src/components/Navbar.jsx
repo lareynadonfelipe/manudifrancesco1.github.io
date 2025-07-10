@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Menu, LogIn, LogOut } from 'lucide-react';
-import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { useCampaniaStore } from "@/store/campaniaStore";
+import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { useCampaniaStore } from '@/store/campaniaStore';
 
 export default function Navbar({ toggleSidebar }) {
   const location = useLocation();
@@ -15,14 +15,14 @@ export default function Navbar({ toggleSidebar }) {
 
   // Load saved campaign
   useEffect(() => {
-    const saved = localStorage.getItem("campaniaSeleccionada");
+    const saved = localStorage.getItem('campaniaSeleccionada');
     if (saved) setCampaniaSeleccionada(saved);
   }, [setCampaniaSeleccionada]);
 
   // Fetch campaigns
   useEffect(() => {
     const fetchCampanias = async () => {
-      const { data } = await supabase.from("siembras").select("campania");
+      const { data } = await supabase.from('siembras').select('campania');
       setCampanias([...new Set(data.map(d => d.campania))]);
     };
     fetchCampanias();
@@ -50,7 +50,7 @@ export default function Navbar({ toggleSidebar }) {
 
   const handleCampaniaChange = e => {
     setCampaniaSeleccionada(e.target.value);
-    localStorage.setItem("campaniaSeleccionada", e.target.value);
+    localStorage.setItem('campaniaSeleccionada', e.target.value);
   };
 
   // Handle Aa click: presets on mobile, slider on desktop
@@ -73,16 +73,17 @@ export default function Navbar({ toggleSidebar }) {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.includes("cosechas")) return "Cosechas";
-    if (path.includes("siembras")) return "Siembras";
-    if (path.includes("camiones")) return "Camiones";
-    if (path.includes("inicio")) return "Inicio";
-    if (path.includes("ventas")) return "Stock/Ventas";
-    return "Stock/Ventas";
+    if (path.includes('calculadora')) return 'Calculadora';
+    if (path.includes('cosechas')) return 'Cosechas';
+    if (path.includes('siembras')) return 'Siembras';
+    if (path.includes('camiones')) return 'Camiones';
+    if (path.includes('inicio')) return 'Inicio';
+    if (path.includes('ventas')) return 'Stock/Ventas';
+    return 'Stock/Ventas';
   };
 
-  // Hide selector on ventas page
-  const showSelector = !location.pathname.includes("ventas");
+  // Hide selector on ventas and calculadora pages
+  const showSelector = !location.pathname.includes('ventas') && !location.pathname.includes('calculadora');
 
   return (
     <header className="relative z-20 md:z-50 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
