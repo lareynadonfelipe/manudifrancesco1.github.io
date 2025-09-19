@@ -6,7 +6,6 @@ import {
   Home,
   ShoppingCart,
   Calculator,
-  Edit,
   FileText,
   Archive,
   Menu as MenuIcon,
@@ -34,11 +33,9 @@ export default function Sidebar({ open, setOpen }) {
     { label: 'Camiones',     icon: <Truck size={22} />,        path: '/camiones' },
     { label: 'Siembras',     icon: <Sprout size={22} />,       path: '/siembras' },
     { label: 'Contactos',    icon: <Users size={22} />,        path: '/contactos' },
-    { label: 'Stock/Ventas', icon: <ShoppingCart size={22} />, path: '/ventas' },
-    { label: 'Ventas (nuevo)', icon: <ShoppingCart size={22} />, path: '/ventas2' },
+    { label: 'Stock/Ventas', icon: <ShoppingCart size={22} />, path: '/ventas2' },
     { label: 'Liquidaciones AFIP', icon: <FileText size={22} />, path: '/liquidaciones-afip' },
     { label: 'Calculadora',  icon: <Calculator size={22} />,   path: '/calculadora' },
-    { label: 'Editor',       icon: <Edit size={22} />,         path: '/editor' },
   ];
 
   // Accesos especiales para Manu
