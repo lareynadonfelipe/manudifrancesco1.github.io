@@ -73,17 +73,19 @@ export default function Navbar({ toggleSidebar }) {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.includes('calculadora')) return 'Calculadora';
+    if (path.includes('inicio')) return 'Inicio';
+    if (path.includes('contactos')) return 'Contactos';
     if (path.includes('cosechas')) return 'Cosechas';
     if (path.includes('siembras')) return 'Siembras';
     if (path.includes('camiones')) return 'Camiones';
-    if (path.includes('inicio')) return 'Inicio';
     if (path.includes('ventas')) return 'Stock/Ventas';
-    return 'Stock/Ventas';
+    if (path.includes('liquidaciones-afip')) return 'Liquidaciones AFIP';
+    if (path.includes('calculadora')) return 'Calculadora';
+    return 'Inicio';
   };
 
-  // Hide selector on ventas and calculadora pages
-  const showSelector = !location.pathname.includes('ventas') && !location.pathname.includes('calculadora');
+  // Hide selector on ventas, calculadora, and liquidaciones-afip pages
+  const showSelector = !location.pathname.includes('ventas') && !location.pathname.includes('calculadora') && !location.pathname.includes('liquidaciones-afip');
 
   return (
     <header className="relative z-20 md:z-50 bg-white/60 backdrop-blur-md border-b border-white/30 px-6 py-2 flex flex-col shadow-sm">
