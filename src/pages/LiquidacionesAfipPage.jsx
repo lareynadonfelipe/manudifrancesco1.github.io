@@ -1,7 +1,9 @@
+import ProtectedRoute from "@/components/ProtectedRoute";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 // Ajustá estas rutas si en tu proyecto están en otra carpeta
 import { supabase } from "@/lib/supabase";
 import LiquidacionesReaderModal from "@/components/liquidaciones/LiquidacionesReaderModal";
+import { Filter } from "lucide-react";
 
 // Utilidades locales para evitar dependencias externas
 const formatNumber = (n) => {
@@ -29,7 +31,7 @@ const formatDate = (iso) => {
 // Helper para resolver la URL del PDF desde distintos nombres de campo
 const getPdfUrl = (row) => row?.archivo_url || row?.archivoUrl || row?.pdf_url || row?.pdfUrl || "";
 
-export default function LiquidacionesAfipPage() {
+function LiquidacionesAfipPage() {
   // Estados principales
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +42,7 @@ export default function LiquidacionesAfipPage() {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterGrano, setFilterGrano] = useState("");
   const [filterCosecha, setFilterCosecha] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Modal / lector
   const [liquidacionOpen, setLiquidacionOpen] = useState(false);
@@ -210,74 +213,108 @@ export default function LiquidacionesAfipPage() {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Encabezado */}
-      <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-semibold text-gray-900">Liquidaciones AFIP</h1>
-        <div className="flex items-center gap-3 flex-wrap justify-end">
-          {/* Filtros */}
-          <input
-            type="text"
-            value={filterSearch}
-            onChange={(e)=>setFilterSearch(e.target.value)}
-            placeholder="Buscar: grano, cosecha, COE, comprobante, KG, precio…"
-            className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <select
-            value={filterGrano}
-            onChange={(e)=>setFilterGrano(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">Grano (todos)</option>
-            {granoOpts.map(g => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
-          <select
-            value={filterCosecha}
-            onChange={(e)=>setFilterCosecha(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">Cosecha (todas)</option>
-            {cosechaOpts.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-
-          {/* Acciones */}
-          <button
-            className="px-4 py-2 rounded-md shadow-sm transition text-white bg-emerald-600 hover:bg-emerald-700 text-base font-semibold"
-            onClick={handleUploadClick}
-          >
-            Cargar liquidación
-          </button>
-          {selectedLiq && (
-            <>
-              <button
-                className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium"
-                onClick={() => handleViewPdf(selectedLiq)}
-              >
-                Ver liquidación
-              </button>
-              <button
-                className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium"
-                onClick={() => {
-                  setEditLiqData(selectedLiq);
-                  setLiqInitialFile(null);
-                  setLiquidacionOpen(true);
-                }}
-              >
-                Editar
-              </button>
-              <button
-                className="px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 text-base font-medium"
-                onClick={() => handleDelete(selectedLiq)}
-              >
-                Eliminar
-              </button>
-            </>
+      {/* Header: botón Filtros + acciones */}
+      <div className="mb-5 flex items-center justify-end gap-3 flex-wrap">
+        <button
+          className="px-4 py-2 rounded-md shadow-sm transition text-white bg-emerald-600 hover:bg-emerald-700 text-base font-semibold"
+          onClick={handleUploadClick}
+        >
+          Cargar liquidación
+        </button>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          className="px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium inline-flex items-center gap-2"
+          title="Mostrar/ocultar filtros"
+        >
+          <Filter size={18} />
+          Filtros
+          {(filterSearch || filterGrano || filterCosecha) && (
+            <span className="ml-1 inline-flex items-center justify-center text-xs px-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">●</span>
           )}
-        </div>
+        </button>
+
+        {selectedLiq && (
+          <>
+            <button
+              className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium"
+              onClick={() => {
+                setEditLiqData(selectedLiq);
+                setLiqInitialFile(null);
+                setLiquidacionOpen(true);
+              }}
+            >
+              Editar
+            </button>
+            <button
+              className="px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 text-base font-medium"
+              onClick={() => handleDelete(selectedLiq)}
+            >
+              Eliminar
+            </button>
+          </>
+        )}
       </div>
+
+      {/* Panel de filtros (toggle) */}
+      {filtersOpen && (
+        <div className="mt-3 w-full">
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Buscar</label>
+              <input
+                type="text"
+                value={filterSearch}
+                onChange={(e)=>setFilterSearch(e.target.value)}
+                placeholder="grano, cosecha, COE, comprobante, KG, precio…"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Grano</label>
+              <select
+                value={filterGrano}
+                onChange={(e)=>setFilterGrano(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="">(todos)</option>
+                {granoOpts.map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Cosecha</label>
+              <select
+                value={filterCosecha}
+                onChange={(e)=>setFilterCosecha(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="">(todas)</option>
+                {cosechaOpts.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-3 flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-50 text-sm"
+                onClick={() => { setFilterSearch(''); setFilterGrano(''); setFilterCosecha(''); }}
+              >
+                Limpiar
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
+                onClick={() => setFiltersOpen(false)}
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contenido */}
       <div className="rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
@@ -289,13 +326,13 @@ export default function LiquidacionesAfipPage() {
           <div className="px-5 py-10 text-center text-gray-500">Sin liquidaciones cargadas.</div>
         ) : (
           <div className="overflow-x-auto max-h-[65vh] space-y-8">
-            {/* TABLA: Sin venta asociada */}
+            {/* TABLA: Todas las liquidaciones (unificada) */}
             <div className="rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
               <div className="px-5 py-3 bg-white/70 border-b border-gray-200/60 backdrop-blur flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Sin venta asociada</h2>
-                <span className="text-sm text-gray-500">{filteredRows.filter(r => !r.venta_id).length} registros</span>
+                <h2 className="text-lg font-semibold text-gray-900">Todas las liquidaciones</h2>
+                <span className="text-sm text-gray-500">{filteredRows.length} registros</span>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overflow-y-auto relative" style={{ maxHeight: "65vh" }}>
                 <table className="min-w-full table-fixed text-base">
                   <thead className="bg-white sticky top-0 z-10 border-b border-gray-200/60">
                     <tr>
@@ -356,7 +393,7 @@ export default function LiquidacionesAfipPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredRows.filter(r => !r.venta_id).map((r) => (
+                    {filteredRows.map((r) => (
                       <tr
                         key={r.id}
                         className={`hover:bg-gray-50 cursor-pointer ${selectedLiq?.id === r.id ? "bg-green-50" : ""}`}
@@ -385,111 +422,20 @@ export default function LiquidacionesAfipPage() {
                         <td className="px-4 py-3 h-12 align-middle whitespace-nowrap text-right">
                           {formatPrice(Number(r.pago_segun_condiciones))}
                         </td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{r.archivo_nombre || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* TABLA: Asociadas a venta */}
-            <div className="rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
-              <div className="px-5 py-3 bg-white/70 border-b border-gray-200/60 backdrop-blur flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Asociadas a venta</h2>
-                <span className="text-sm text-gray-500">{filteredRows.filter(r => r.venta_id).length} registros</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full table-fixed text-base">
-                  <thead className="bg-white sticky top-0 z-10 border-b border-gray-200/60">
-                    <tr>
-                      {[
-                        { key: "fecha", label: "Fecha" },
-                        { key: "coe", label: "COE" },
-                        { key: "nro_comprobante", label: "Comprobante" },
-                        { key: "grano", label: "Grano" },
-                        { key: "cosecha", label: "Cosecha" },
-                        { key: "cantidad_kg", label: "Cantidad" },
-                        { key: "precio_kg", label: "Precio/Kg" },
-                        { key: "total_operacion", label: "Total Operación" },
-                        { key: "importe_neto_a_pagar", label: "Importe Neto" },
-                        { key: "pago_segun_condiciones", label: "Cobrado" },
-                        { key: "archivo_nombre", label: "Archivo" },
-                      ].map(({ key, label }) => (
-                        <th
-                          key={key}
-                          className={`px-4 py-3 text-xs uppercase tracking-wide text-gray-500 whitespace-nowrap ${
-                            [
-                              "cantidad_kg",
-                              "precio_kg",
-                              "total_operacion",
-                              "importe_neto_a_pagar",
-                              "pago_segun_condiciones",
-                            ].includes(key)
-                              ? "text-right"
-                              : "text-left"
-                          } ${
-                            key === "fecha"
-                              ? "w-28"
-                              : key === "coe"
-                              ? "w-40"
-                              : key === "nro_comprobante"
-                              ? "w-44"
-                              : key === "grano"
-                              ? "w-28"
-                              : key === "cosecha"
-                              ? "w-20"
-                              : key === "cantidad_kg"
-                              ? "w-28"
-                              : key === "precio_kg"
-                              ? "w-28"
-                              : key === "total_operacion"
-                              ? "w-36"
-                              : key === "importe_neto_a_pagar"
-                              ? "w-36"
-                              : key === "pago_segun_condiciones"
-                              ? "w-36"
-                              : key === "archivo_nombre"
-                              ? "w-48"
-                              : ""
-                          }`}
-                        >
-                          {label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white">
-                    {filteredRows.filter(r => r.venta_id).map((r) => (
-                      <tr
-                        key={r.id}
-                        className={`hover:bg-gray-50 cursor-pointer ${selectedLiq?.id === r.id ? "bg-green-50" : ""}`}
-                        onClick={() => {
-                          setSelectedLiq(r);
-                        }}
-                        title={"Seleccionar liquidación"}
-                      >
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{formatDate(r.fecha)}</td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{r.coe || "—"}</td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{r.nro_comprobante || "—"}</td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{r.grano || "—"}</td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{r.cosecha || r.campania || "—"}</td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap text-right">
-                          {formatNumber(Number(r.cantidad_kg) || 0)}&nbsp;KG
+                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">
+                          {r.archivo_nombre ? (
+                            <a
+                              href="#"
+                              onClick={(e) => { e.preventDefault(); handleViewPdf(r); }}
+                              className="text-emerald-700 hover:text-emerald-800 underline"
+                              title="Ver liquidación"
+                            >
+                              {r.archivo_nombre}
+                            </a>
+                          ) : (
+                            "—"
+                          )}
                         </td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap text-right">
-                          {formatPrice(Number(r.precio_kg))}
-                        </td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap text-right">
-                          {formatPrice(Number(r.total_operacion))}
-                        </td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap text-right">
-                          {formatPrice(Number(r.importe_neto_a_pagar))}
-                        </td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap text-right">
-                          {formatPrice(Number(r.pago_segun_condiciones))}
-                        </td>
-                        <td className="px-4 py-3 h-12 align-middle whitespace-nowrap">{r.archivo_nombre || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -534,5 +480,13 @@ export default function LiquidacionesAfipPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function LiquidacionesAfipPageProtected() {
+  return (
+    <ProtectedRoute>
+      <LiquidacionesAfipPage />
+    </ProtectedRoute>
   );
 }
