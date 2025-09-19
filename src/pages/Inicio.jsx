@@ -1,6 +1,6 @@
 // src/pages/Inicio.jsx
 import React from "react";
-import { Leaf, Truck, Sprout, ShoppingCart } from "lucide-react";
+import { Leaf, Truck, Sprout, ShoppingCart, FileText, Calculator } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Inicio() {
@@ -9,7 +9,10 @@ export default function Inicio() {
     { label: "Cosechas", icon: <Leaf size={28} />,  path: "/cosechas", description: "Gestión de lotes cosechados y rendimiento." },
     { label: "Camiones", icon: <Truck size={28} />,  path: "/camiones", description: "Registro de transporte por lote y destino." },
     { label: "Siembras", icon: <Sprout size={28} />, path: "/siembras", description: "Registro de siembras por campaña y lote." },
-    { label: "Stock/Ventas", icon: <ShoppingCart size={28} />, path: "/ventas", description: "Gestión de stock y registro de ventas." },
+    { label: "Stock/Ventas", icon: <ShoppingCart size={28} />, path: "/ventas2", description: "Gestión de stock y ventas." },
+    { label: "Contactos", icon: <Sprout size={28} />, path: "/contactos", description: "Gestión de contactos y clientes." },
+    { label: "Liquidaciones AFIP", icon: <FileText size={28} />, path: "/liquidaciones-afip", description: "Gestión de liquidaciones AFIP." },
+    { label: "Calculadora", icon: <Calculator size={28} />, path: "/calculadora", description: "Herramientas de cálculo agrícola." },
   ];
 
   return (

@@ -1,18 +1,31 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage         from "./pages/LoginPage";
-import MainLayout        from "./layouts/MainLayout";
-import Inicio            from "./pages/Inicio";
-import CosechasPage      from "./pages/CosechasPage";
-import SiembrasPage      from "./pages/SiembrasPage";
-import CamionesPage      from "./pages/CamionesPage";
-import VentasPage        from "./pages/VentasPage";
-import CalculadoraPage   from "./pages/CalculadoraPage";
-import EditorPage        from "./pages/EditorPage";
-import PlanillasCosechas from "./pages/PlanillasCosechas";
-import IngresoAcopios    from "./pages/IngresoAcopios";
-import UnauthorizedPage  from "./pages/UnauthorizedPage";
-import ProtectedRoute    from "./components/ProtectedRoute";
+
+import LoginPage               from "./pages/LoginPage";
+import MainLayout              from "./layouts/MainLayout";
+
+import Inicio                  from "./pages/Inicio";
+import CosechasPage            from "./pages/CosechasPage";
+import SiembrasPage            from "./pages/SiembrasPage";
+import CamionesPage            from "./pages/CamionesPage";
+// import VentasPage              from "./pages/VentasPage";
+import VentasPage2Protected   from "./pages/VentasPage2";
+import LiquidacionesAfipPageProtected from "./pages/LiquidacionesAfipPage";
+import CalculadoraPage         from "./pages/CalculadoraPage";
+import EditorPage              from "./pages/EditorPage";
+import PlanillasCosechas       from "./pages/PlanillasCosechas";
+import IngresoAcopios          from "./pages/IngresoAcopios";
+import UnauthorizedPage        from "./pages/UnauthorizedPage";
+import ClientesProveedoresPage from "./pages/ClientesProveedoresPage";
+import OcrFacturaPage from "./pages/OcrFacturaPage";
+import TestFacturaUpload from "./pages/TestFacturaUpload";
+
+
+import ProtectedRoute          from "./components/ProtectedRoute";
+
+// **Nuevas páginas de facturación**
+import NuevaFacturaPage         from "./pages/NuevaFacturaPage";
+import FacturasPendientesPage   from "./pages/FacturasPendientesPage";
 
 export default function App() {
   return (
@@ -20,14 +33,25 @@ export default function App() {
       {/* 1) Login (público) */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* 2) Rutas que requieren login */}
+      {/* 2) Rutas que requieren autenticación */}
       <Route element={<MainLayout />}>
-        {/* 2.1 Calculadora: solo exige autenticación */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/calculadora" element={<CalculadoraPage />} />
-        </Route>
+ {/* 2.1 Rutas protegidas genéricas */}
+<Route element={<ProtectedRoute />}>
+  {/* Calculadora */}
+  <Route path="/calculadora" element={<CalculadoraPage />} />
+  {/* OCR factura (prueba) */}
+  <Route path="/ocr-factura" element={<OcrFacturaPage />} />
+  {/* Prueba de subida de factura */}
+  <Route path="/test-factura-upload" element={<TestFacturaUpload />} />
+  {/* Facturación */}
+  <Route path="/facturas/nueva"      element={<NuevaFacturaPage />} />
+  <Route path="/facturas/pendientes" element={<FacturasPendientesPage />} />
+  {/* Contactos */}
+  <Route path="/contactos" element={<ClientesProveedoresPage />} />
+</Route>
 
-        {/* 2.2 Rutas con permiso específico */}
+
+        {/* 2.2 Rutas con permisos específicos */}
         <Route element={<ProtectedRoute permissionKey="inicio" />}>
           <Route path="/inicio" element={<Inicio />} />
         </Route>
@@ -41,7 +65,8 @@ export default function App() {
           <Route path="/camiones" element={<CamionesPage />} />
         </Route>
         <Route element={<ProtectedRoute permissionKey="ventas" />}>
-          <Route path="/ventas" element={<VentasPage />} />
+          <Route path="/ventas2" element={<VentasPage2Protected />} />
+          <Route path="/liquidaciones-afip" element={<LiquidacionesAfipPageProtected />} />
         </Route>
         <Route element={<ProtectedRoute permissionKey="editor" />}>
           <Route path="/editor" element={<EditorPage />} />
