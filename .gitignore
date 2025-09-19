@@ -7,3 +7,4 @@ node_modules/
 # system files
 .DS_Store
 .env
+src/components/OCRFactura.jsx

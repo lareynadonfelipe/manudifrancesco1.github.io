@@ -1,4 +1,3 @@
-// src/components/ProtectedRoute.jsx
 import React from "react";
 import { Navigate, useLocation, Outlet } from "react-router-dom";
 
@@ -6,8 +5,9 @@ import { Navigate, useLocation, Outlet } from "react-router-dom";
  * ProtectedRoute:
  * - Si no hay sesión → /login
  * - Si permissionKey no está definido → solo checa sesión
- * - Si permissionKey === 'editor' → email == manu...
+ * - Si permissionKey === 'editor' → solo email manu...
  * - Si permissionKey definido → checa permissions[permissionKey] === true
+ * - Caso especial: bloquea acceso a cualquier ruta si email es "horaciolinzoain@hotmail.com", excepto /login y /unauthorized
  */
 export default function ProtectedRoute({ permissionKey, children }) {
   const location = useLocation();
@@ -29,12 +29,22 @@ export default function ProtectedRoute({ permissionKey, children }) {
 
   const { permissions, email } = usuario;
 
-  // 2) Si no pasaron permissionKey, solo checamos que esté logueado
+  // 2) Caso especial: bloquear acceso a todo excepto login y unauthorized a horaciolinzoain@hotmail.com
+  const blockedUser = "horaciolinzoain@hotmail.com";
+  if (
+    email === blockedUser &&
+    location.pathname !== "/login" &&
+    location.pathname !== "/unauthorized"
+  ) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // 3) Si no pasaron permissionKey, solo checamos que esté logueado
   if (!permissionKey) {
     return children ? <>{children}</> : <Outlet />;
   }
 
-  // 3) Caso especial "editor" (solo Manu)
+  // 4) Caso especial "editor" (solo Manu)
   if (permissionKey === "editor") {
     if (email === "manudifrancesco1@gmail.com") {
       return children ? <>{children}</> : <Outlet />;
@@ -42,11 +52,11 @@ export default function ProtectedRoute({ permissionKey, children }) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 4) Chequeo de permiso normal
+  // 5) Chequeo de permiso normal
   if (!permissions || permissions[permissionKey] !== true) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 5) Todo OK → renderizado
+  // 6) Todo OK → renderizado
   return children ? <>{children}</> : <Outlet />;
 }
