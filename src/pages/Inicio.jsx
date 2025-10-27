@@ -17,18 +17,18 @@ export default function Inicio() {
   }, []);
   const pages = [
     // Gestión agropecuaria
-    { label: 'Cosechas', icon: Leaf, path: '/cosechas', description: 'Gestión de lotes cosechados y rendimiento.', group: 'Gestión agropecuaria' },
-    { label: 'Camiones', icon: Truck, path: '/camiones', description: 'Registro de transporte por lote y destino.', group: 'Gestión agropecuaria' },
-    { label: 'Siembras', icon: Sprout, path: '/siembras', description: 'Registro de siembras por campaña y lote.', group: 'Gestión agropecuaria' },
+    { label: 'Cosechas', icon: Leaf, path: '/cosechas', description: 'Gestión de lotes cosechados y rendimiento.', group: 'Producción' },
+    { label: 'Camiones', icon: Truck, path: '/camiones', description: 'Registro de transporte por lote y destino.', group: 'Producción' },
+    { label: 'Siembras', icon: Sprout, path: '/siembras', description: 'Registro de siembras por campaña y lote.', group: 'Producción' },
 
     // Gestión comercial
-    { label: 'Stock/Ventas', icon: ShoppingCart, path: '/ventas2', description: 'Gestión de stock, ventas y clientes.', group: 'Gestión comercial' },
-    { label: 'Liquidaciones AFIP', icon: FileText, path: '/liquidaciones-afip', description: 'Gestión y registro de liquidaciones AFIP.', group: 'Gestión comercial' },
-    { label: 'Facturas', icon: FileText, path: '/facturas', description: 'Administrador de facturas con OCR y comprobantes.', group: 'Gestión comercial' },
-    { label: 'Calculadora', icon: Calculator, path: '/calculadora', description: 'Herramientas de cálculo agrícola.', group: 'Gestión comercial' },
+    { label: 'Stock/Ventas', icon: ShoppingCart, path: '/ventas2', description: 'Gestión de stock, ventas y clientes.', group: 'Gestión Comercial' },
+    { label: 'Liquidaciones AFIP', icon: FileText, path: '/liquidaciones-afip', description: 'Gestión y registro de liquidaciones AFIP.', group: 'Gestión Comercial' },
+    { label: 'Facturas', icon: FileText, path: '/facturas', description: 'Administrador de facturas con OCR y comprobantes.', group: 'Gestión Comercial' },
+    { label: 'Calculadora', icon: Calculator, path: '/calculadora', description: 'Herramientas de cálculo agrícola.', group: 'Gestión Comercial' },
 
     // Otros
-    { label: 'Contactos', icon: Sprout, path: '/contactos', description: 'Gestión de contactos y clientes.', group: 'Otros' },
+    { label: 'Contactos', icon: Sprout, path: '/contactos', description: 'Gestión de contactos y clientes.', group: 'Más' },
   ];
 
   const visiblePages = useMemo(() => {
@@ -41,10 +41,9 @@ export default function Inicio() {
     });
   }, [pages, query]);
 
-  const allGroups = ['Gestión agropecuaria', 'Gestión comercial', 'Otros'];
+  const allGroups = ['Producción', 'Gestión Comercial', 'Más'];
   const [openGroups, setOpenGroups] = useState(() => {
-    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
-    return Object.fromEntries(allGroups.map(g => [g, !isMobile]));
+    return Object.fromEntries(allGroups.map(g => [g, true]));
   });
   const toggleGroup = (g) => {
     const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
@@ -55,9 +54,8 @@ export default function Inicio() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mq = window.matchMedia('(max-width: 640px)');
-    const apply = (e) => {
-      const open = !e.matches; // open all on desktop, collapse all on mobile
-      setOpenGroups(Object.fromEntries(allGroups.map(g => [g, open])));
+    const apply = () => {
+      setOpenGroups(Object.fromEntries(allGroups.map(g => [g, true])));
     };
     // Listen to changes between mobile and desktop
     mq.addEventListener('change', apply);
@@ -129,3 +127,9 @@ export default function Inicio() {
     </div>
   );
 }
+
+// src/components/TopNavbar.jsx
+// (only the brand label part is shown with changes applied)
+<span className="font-semibold tracking-wide truncate max-w-[150px] sm:max-w-none text-xs sm:text-sm md:text-base">
+  La Reina – Don Felipe
+</span>

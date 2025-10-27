@@ -51,6 +51,7 @@ export default function TopNavbar() {
   const [query, setQuery] = useState('');
   const searchRef = useRef(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // User menu state
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -206,6 +207,7 @@ export default function TopNavbar() {
       if (e.key === 'Escape') {
         setOpenGroup(null);
         setMoreOpen(false);
+        setSearchOpen(false);
       }
     };
     window.addEventListener('keydown', onEsc);
@@ -233,7 +235,7 @@ export default function TopNavbar() {
       <div className="h-16 px-3 md:px-4 flex items-center gap-4 w-full">
         {/* Mobile toggle */}
         <button
-          className="md:hidden p-2 rounded hover:bg-gray-100"
+          className="lg:hidden p-2 rounded hover:bg-gray-100"
           onClick={() => setMobileOpen(true)}
           aria-label="Abrir menú"
         >
@@ -253,7 +255,7 @@ export default function TopNavbar() {
         </div>
 
         {/* Desktop nav (agrupado) */}
-        <nav className="hidden md:flex items-center gap-1 ml-4" ref={navGroupsRef}>
+        <nav className="hidden lg:flex flex-wrap items-center gap-1 ml-4" ref={navGroupsRef}>
           {/* Inicio (link directo) */}
           {startItem && (
             <button
@@ -281,7 +283,7 @@ export default function TopNavbar() {
                 aria-haspopup="menu"
                 aria-expanded={openGroup === 'agro'}
               >
-                <span className="hidden lg:inline whitespace-nowrap">Gestión agropecuaria</span>
+                <span className="hidden lg:inline whitespace-nowrap">Producción</span>
                 <ChevronDown size={16} className={`${openGroup === 'agro' ? 'rotate-180 text-gray-900' : 'text-gray-500'} transition-transform`} />
               </button>
               <div className={`absolute top-full left-0 mt-1 min-w-[260px] bg-white border border-gray-200 rounded-md shadow-lg p-1 z-30 ${openGroup === 'agro' ? 'block' : 'hidden'}`}>
@@ -370,36 +372,52 @@ export default function TopNavbar() {
         </nav>
 
         {/* Right side */}
-        <div className="ml-auto flex items-center gap-2">
-          {/* Global Search input */}
-          <div className="hidden md:flex items-center gap-2">
-            <div className="relative">
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setQuery(val);
-                  window.__GLOBAL_SEARCH_QUERY__ = val;
-                  window.dispatchEvent(new CustomEvent('global-search', { detail: { query: val, q: val } }));
+        <div className="ml-auto flex items-center gap-1.5">
+          {/* Global Search (desktop): icon-only collapsed, expands on click */}
+          <div className="hidden lg:flex items-center gap-2 relative">
+            {!searchOpen && (
+              <button
+                onClick={() => {
+                  setSearchOpen(true);
+                  setTimeout(() => searchRef.current?.focus(), 0);
                 }}
-                placeholder="Buscar…"
-                aria-label="Búsqueda global"
-                className="w-[180px] md:w-[220px] lg:w-[280px] xl:w-[340px] h-11 rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-16 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#235633]/30 focus:bg-white"
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-              />
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2" size={16} />
-              {query && (
-                <button
-                  onClick={clearSearch}
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  ×
-                </button>
-              )}
-            </div>
+                aria-label="Abrir búsqueda"
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                title="Buscar"
+              >
+                <Search size={18} />
+              </button>
+            )}
+            {searchOpen && (
+              <div className="relative">
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setQuery(val);
+                    window.__GLOBAL_SEARCH_QUERY__ = val;
+                    window.dispatchEvent(new CustomEvent('global-search', { detail: { query: val, q: val } }));
+                  }}
+                  placeholder="Buscar…"
+                  aria-label="Búsqueda global"
+                  className="w-[160px] md:w-[200px] lg:w-[260px] xl:w-[340px] h-10 rounded-md border border-gray-200 bg-white pl-8 pr-8 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#235633]/30 transition-all"
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => { setSearchFocused(false); if (!query) setSearchOpen(false); }}
+                />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                {query && (
+                  <button
+                    onClick={() => { clearSearch(); setSearchOpen(false); }}
+                    aria-label="Limpiar búsqueda"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    title="Limpiar"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Usuario/Invitado */}
