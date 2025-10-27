@@ -35,6 +35,7 @@ export default function Sidebar({ open, setOpen }) {
     { label: 'Contactos',    icon: <Users size={22} />,        path: '/contactos' },
     { label: 'Stock/Ventas', icon: <ShoppingCart size={22} />, path: '/ventas2' },
     { label: 'Liquidaciones AFIP', icon: <FileText size={22} />, path: '/liquidaciones-afip' },
+    { label: 'Facturas', icon: <FileText size={22} />, path: '/facturas' },
     { label: 'Calculadora',  icon: <Calculator size={22} />,   path: '/calculadora' },
   ];
 

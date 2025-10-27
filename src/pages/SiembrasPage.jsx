@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Pencil, Save } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
@@ -8,12 +8,25 @@ const defaultCultivos = ["Soja", "Maíz", "Trigo"];
 
 const SiembrasPage = () => {
   const { mode } = useUIStore();
-  const { campaniaSeleccionada } = useCampaniaStore();
+  const { campaniaSeleccionada, setCampaniaSeleccionada } = useCampaniaStore();
+  
   const [siembras, setSiembras] = useState([]);
+  const campanias = useMemo(() => {
+    return Array.from(new Set((siembras || []).map(s => s.campania))).filter(Boolean).sort((a,b)=> String(b).localeCompare(String(a)));
+  }, [siembras]);
   const [filaEditandoId, setFilaEditandoId] = useState(null);
   const [filaEditada, setFilaEditada] = useState({});
   const [cultivoSeleccionado, setCultivoSeleccionado] = useState(defaultCultivos[0]);
   const [loading, setLoading] = useState(false);
+
+  // === Global search (Navbar) ===
+  const [query, setQuery] = useState(typeof window !== "undefined" ? (window.__GLOBAL_SEARCH_QUERY__ || "") : "");
+  useEffect(() => {
+    const onGlobalSearch = (e) => setQuery(e?.detail?.q ?? "");
+    window.addEventListener("global-search", onGlobalSearch);
+    return () => window.removeEventListener("global-search", onGlobalSearch);
+  }, []);
+  const qNorm = (query || "").trim().toLowerCase();
 
   useEffect(() => {
     const fetchSiembras = async () => {
@@ -32,8 +45,25 @@ const SiembrasPage = () => {
     fetchSiembras();
   }, [campaniaSeleccionada]);
 
-  // Filtrar por cultivo seleccionado
-  const cultivoData = siembras.filter(si => si.cultivo === cultivoSeleccionado);
+  // Filtrar por cultivo seleccionado y búsqueda global
+  const cultivoData = useMemo(() => {
+    const base = siembras.filter(si => si.cultivo === cultivoSeleccionado);
+    if (!qNorm) return base;
+    return base.filter(si => {
+      const lote = (si.lote || "").toLowerCase();
+      const productor = (si.productor || "").toLowerCase();
+      const variedad = (si.variedad || "").toLowerCase();
+      const campoVal = (si.campo || "sin campo").toLowerCase();
+      const ha = (si.ha ?? "").toString().toLowerCase();
+      return (
+        lote.includes(qNorm) ||
+        productor.includes(qNorm) ||
+        variedad.includes(qNorm) ||
+        campoVal.includes(qNorm) ||
+        ha.includes(qNorm)
+      );
+    });
+  }, [siembras, cultivoSeleccionado, qNorm]);
   // Agrupar por campo
   const groupedByCampo = cultivoData.reduce((acc, si) => {
     const campo = si.campo || "Sin campo";
@@ -64,9 +94,27 @@ const SiembrasPage = () => {
 
   return (
     <div className="px-4 sm:px-6 py-2">
+      {/* Encabezado de página */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <h1 className="text-2xl font-semibold text-gray-700">Siembras</h1>
+        <div className="flex items-center gap-2">
+          <select
+            id="campania-siembras"
+            aria-label="Seleccionar campaña"
+            value={campaniaSeleccionada || ''}
+            onChange={(e)=> setCampaniaSeleccionada(e.target.value || null)}
+            className="border-gray-300 rounded-md px-3 py-2 text-sm h-9"
+          >
+            <option value="">Seleccioná campaña…</option>
+            {campanias.map((c)=> (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       {!campaniaSeleccionada ? (
         <div className="p-4 text-center text-gray-600">
-          Por favor selecciona una campaña en el navbar.
+          Seleccioná una campaña para ver resultados.
         </div>
       ) : (
         <>
@@ -90,7 +138,7 @@ const SiembrasPage = () => {
           {/* Cards por campo */}
           {Object.entries(groupedByCampo).length === 0 ? (
             <div className="text-center p-6 text-gray-500">
-              No hay siembras para este cultivo.
+              {qNorm ? "No hay siembras que coincidan con la búsqueda." : "No hay siembras para este cultivo."}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">

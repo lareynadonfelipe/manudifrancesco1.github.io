@@ -260,52 +260,49 @@ export default function ClientesProveedoresPage() {
   }, [contactosFiltrados, sortConfig]);
 
   return (
-    <div className="max-w-7xl mx-auto p-0 md:p-6 relative flex flex-row gap-0">
+    <div className="w-full min-h-screen pb-12 px-2">
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <h1 className="text-2xl font-semibold text-gray-700">Contactos</h1>
+      </div>
+
       {/* Tabla principal */}
-      <div className="flex-1 transition-all duration-200">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 px-4">
-          <div className="flex-1 flex items-center gap-2">
-            <div className="relative w-full md:w-96">
-              <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar por razón social, documento, categoría..."
-                className="pl-8 pr-3 py-2 rounded-lg border border-emerald-300 w-full focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none text-sm"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
+      <div className="transition-all duration-200">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto min-h-[350px] max-h-[70vh] overflow-y-auto border border-slate-200">
+          <div className="px-5 py-3 bg-white/70 border-b border-gray-200/60 backdrop-blur flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="hidden md:block text-emerald-700 text-sm bg-emerald-50 rounded-full px-2.5 py-1">
+                {contactos.length}
+              </div>
+              {authWarning && (
+                <span className="text-amber-700 text-xs bg-amber-100 rounded-full px-3 py-1">
+                  {authWarning}
+                </span>
+              )}
             </div>
-            <span className="hidden md:inline-block text-emerald-700 text-sm bg-emerald-50 rounded-full px-2.5 py-1">
-              {contactos.length}
-            </span>
-            {authWarning && (
-              <span className="text-amber-700 text-xs bg-amber-100 rounded-full px-3 py-1">
-                {authWarning}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <div className="relative w-56 md:w-80">
+                <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por razón social, documento, categoría..."
+                  className="pl-8 pr-3 py-2 rounded-md border border-gray-300 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm bg-white"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={() => {
+                  setForm(camposIniciales);
+                  setShowModal(true);
+                  setErrores({});
+                }}
+                className="px-4 py-2 rounded-md shadow-sm transition text-white bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold inline-flex items-center gap-2"
+                title="Nuevo contacto"
+              >
+                <Plus size={18} /> Nuevo
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setForm(camposIniciales);
-                setShowModal(true);
-                setErrores({});
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm"
-            >
-              <Plus size={18} /> Nuevo
-            </button>
-            {/* (Opcional futuro) Exportar CSV */}
-            {/* <button
-              onClick={() => {}}
-              className="hidden md:flex border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-3 py-2 rounded-lg items-center gap-2"
-            >
-              <Download size={16} /> Exportar
-            </button> */}
-          </div>
-        </div>
-        {/* Tabla */}
-        <div className="bg-white rounded-xl shadow-sm p-0 mt-3 overflow-x-auto min-h-[350px] max-h-[70vh] overflow-y-auto border border-slate-200">
           {errorMsg && (
             <div className="mx-3 my-2 rounded bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
               Error al cargar: {errorMsg}

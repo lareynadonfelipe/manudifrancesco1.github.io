@@ -1,5 +1,5 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { CheckCircle, Circle, Filter, FileText } from "lucide-react";import LiquidacionesReaderModal from "@/components/liquidaciones/LiquidacionesReaderModal";
 
@@ -554,6 +554,15 @@ function VentasPage() {
   const liqScrollRef = useRef(null);
   const [liqScrolled, setLiqScrolled] = useState(false);
 
+  // === Global search (Navbar) ===
+  const [query, setQuery] = useState(typeof window !== "undefined" ? (window.__GLOBAL_SEARCH_QUERY__ || "") : "");
+  useEffect(() => {
+    const onGlobalSearch = (e) => setQuery(e?.detail?.q ?? "");
+    window.addEventListener("global-search", onGlobalSearch);
+    return () => window.removeEventListener("global-search", onGlobalSearch);
+  }, []);
+  const qNorm = (query || "").trim().toLowerCase();
+
   // ORDEN & FILTROS (por columna)
   const [sort, setSort] = useState({ key: null, dir: 'asc' }); // dir: 'asc' | 'desc'
   const [filters, setFilters] = useState({}); // { fecha: '2025-09', acopio: 'AGD', kg: '>10000', precio: '200-400', ... }
@@ -605,6 +614,25 @@ function VentasPage() {
       );
     });
   }, [liqSinVenta, liqSearch, liqFilterGrano, liqFilterCosecha]);
+
+  // Aplicar búsqueda global también a la bandeja de "Liquidaciones para asociar"
+  const liqSinVentaFiltradasGlobal = useMemo(() => {
+    if (!qNorm) return liqSinVentaFiltradas;
+    const norm = (v) => (v == null ? "" : String(v)).toLowerCase();
+    return liqSinVentaFiltradas.filter((r) => {
+      return (
+        norm(r.fecha).includes(qNorm) ||
+        norm(r.grano).includes(qNorm) ||
+        norm(r.cosecha).includes(qNorm) ||
+        norm(r.campania).includes(qNorm) ||
+        norm(r.coe).includes(qNorm) ||
+        norm(r.nro_comprobante).includes(qNorm) ||
+        norm(r.cantidad_kg).includes(qNorm) ||
+        norm(r.precio_kg).includes(qNorm) ||
+        norm(r.archivo_nombre).includes(qNorm)
+      );
+    });
+  }, [liqSinVentaFiltradas, qNorm]);
 
   // Desasociar liquidación de una venta
   const [unassigning, setUnassigning] = useState(false);
@@ -1117,8 +1145,22 @@ const ventasFiltradasYOrdenadas = React.useMemo(() => {
       return normalize(av).localeCompare(normalize(bv)) * dir;
     });
   }
+  // búsqueda global (Navbar): fecha, acopio, cultivo, cosecha, kg, precio
+  if (qNorm) {
+    const norm = (v) => (v == null ? "" : String(v)).toLowerCase();
+    rows = rows.filter((r) => {
+      return (
+        norm(r.fecha).includes(qNorm) ||
+        norm(r.acopio).includes(qNorm) ||
+        norm(r.cultivo).includes(qNorm) ||
+        norm(r.cosecha).includes(qNorm) ||
+        norm(r.kg).includes(qNorm) ||
+        norm(r.precio).includes(qNorm)
+      );
+    });
+  }
   return rows;
-}, [ventasTable, filters, sort]);
+}, [ventasTable, filters, sort, qNorm]);
 
 const totalKgVisible = ventasFiltradasYOrdenadas.reduce((sum, r) => sum + Number(r.kg), 0);
 const avgPrecioVisible =
@@ -1128,14 +1170,18 @@ const avgPrecioVisible =
 
 
   return (
-    <div className="px-8 py-6 space-y-8 bg-gray-50 text-[15px] md:text-base lg:text-[17px]">
+    <div className="w-full min-h-screen pb-12 px-2 text-[15px] md:text-base lg:text-[17px]">
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <h1 className="text-2xl font-semibold text-gray-700">Stock / Ventas</h1>
+        </div>
 {/* STOCK CARDS */}
 {loadingStock ? (
   <p className="text-gray-500">Cargando stock…</p>
 ) : errorStock ? (
   <p className="text-red-500">{errorStock}</p>
 ) : (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="grid justify-start gap-6 sm:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
     {defaultCultivos.map((cultivo) => {
       const { totalsByAcopio, byCampaniaAndAcopio } =
         stockByCultivo[cultivo] || {};
@@ -1341,7 +1387,15 @@ const avgPrecioVisible =
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {ventasFiltradasYOrdenadas.map((r) => (
+                    {ventasFiltradasYOrdenadas.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                          {qNorm
+                            ? "No hay ventas que coincidan con la búsqueda."
+                            : "No hay ventas para mostrar."}
+                        </td>
+                      </tr>
+                    ) : ventasFiltradasYOrdenadas.map((r) => (
                       <tr
                         key={r.id}
                         onClick={() => {
@@ -1506,8 +1560,10 @@ const avgPrecioVisible =
                 ref={liqScrollRef}
                 onScroll={(e) => setLiqScrolled(e.currentTarget.scrollTop > 0)}
               >
-                {liqSinVentaFiltradas.length === 0 ? (
-                  <p className="p-6 text-center text-gray-500">Seleccioná una venta para ver sus liquidaciones</p>
+                {liqSinVentaFiltradasGlobal.length === 0 ? (
+                  <p className="p-6 text-center text-gray-500">
+                    {qNorm ? "No hay liquidaciones que coincidan con la búsqueda." : "Seleccioná una venta para ver sus liquidaciones"}
+                  </p>
                 ) : (
                   <table className="min-w-full text-base">
                     <thead className={`bg-white sticky top-0 z-10 border-b border-gray-200/60 ${liqScrolled ? 'shadow-sm' : ''}`}>
@@ -1519,7 +1575,7 @@ const avgPrecioVisible =
                       </tr>
                     </thead>
                     <tbody className="bg-white">
-                      {liqSinVentaFiltradas.map((l) => (
+                      {liqSinVentaFiltradasGlobal.map((l) => (
                         <tr
                           key={l.id}
                           className={`h-12 cursor-grab hover:bg-gray-100 even:bg-gray-50 ${selectedLiq?.id === l.id ? 'bg-green-50' : ''}`}
@@ -1758,6 +1814,7 @@ const avgPrecioVisible =
         }}
       />
 
+      </div>
     </div>
   );
 }

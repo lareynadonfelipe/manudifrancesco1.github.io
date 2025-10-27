@@ -63,11 +63,15 @@ export default function CalculadoraPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="w-full min-h-screen pb-12 px-2 space-y-6">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <h1 className="text-2xl font-semibold text-gray-700">Calculadora</h1>
+      </div>
+
+      <div className="grid justify-start grid-cols-1 md:grid-cols-3 gap-6">
         {/* CULTIVO & PRECIO */}
-        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm hover:shadow-md transition">
+        <div className="rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm hover:shadow-md transition p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-base font-semibold text-emerald-600 uppercase">
               Cultivo & Precio
@@ -154,7 +158,7 @@ export default function CalculadoraPage() {
         </div>
 
         {/* TUS CÁLCULOS */}
-        <div className="col-span-1 md:col-span-2 bg-white border border-gray-200 p-6 rounded-lg shadow-sm hover:shadow-md transition">
+        <div className="col-span-1 md:col-span-2 rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm hover:shadow-md transition p-6">
           <h2 className="text-base font-semibold text-emerald-600 uppercase mb-4">
             Tus Cálculos
           </h2>

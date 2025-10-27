@@ -17,14 +17,11 @@ import PlanillasCosechas       from "./pages/PlanillasCosechas";
 import IngresoAcopios          from "./pages/IngresoAcopios";
 import UnauthorizedPage        from "./pages/UnauthorizedPage";
 import ClientesProveedoresPage from "./pages/ClientesProveedoresPage";
-import OcrFacturaPage from "./pages/OcrFacturaPage";
-import TestFacturaUpload from "./pages/TestFacturaUpload";
-
+import FacturasPage            from "./pages/FacturasPage";
 
 import ProtectedRoute          from "./components/ProtectedRoute";
 
 // **Nuevas páginas de facturación**
-import NuevaFacturaPage         from "./pages/NuevaFacturaPage";
 import FacturasPendientesPage   from "./pages/FacturasPendientesPage";
 
 export default function App() {
@@ -39,12 +36,8 @@ export default function App() {
 <Route element={<ProtectedRoute />}>
   {/* Calculadora */}
   <Route path="/calculadora" element={<CalculadoraPage />} />
-  {/* OCR factura (prueba) */}
-  <Route path="/ocr-factura" element={<OcrFacturaPage />} />
-  {/* Prueba de subida de factura */}
-  <Route path="/test-factura-upload" element={<TestFacturaUpload />} />
+  <Route path="/facturas" element={<FacturasPage />} />
   {/* Facturación */}
-  <Route path="/facturas/nueva"      element={<NuevaFacturaPage />} />
   <Route path="/facturas/pendientes" element={<FacturasPendientesPage />} />
   {/* Contactos */}
   <Route path="/contactos" element={<ClientesProveedoresPage />} />

@@ -1,26 +1,15 @@
 // src/layouts/MainLayout.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from '@/components/Sidebar';
-import Navbar from '@/components/Navbar';
+import TopNavbar from '@/components/TopNavbar';
 
 export default function MainLayout() {
-  // Estado para controlar apertura del sidebar en móvil
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const toggleSidebar = () => setSidebarOpen(prev => !prev);
-
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      {/* Sidebar recibe prop 'open' para mostrar/ocultar en móviles */}
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Navbar recibe callback para alternar sidebar */}
-        <Navbar toggleSidebar={toggleSidebar} />
-
+        <TopNavbar />
         <main className="flex-1 w-full overflow-y-auto bg-gray-50">
-          {/* Contenedor con padding mínimo vertical */}
-          <div className="w-full px-2 py-0">
+          <div className="w-full px-2 md:px-4 py-2">
             <Outlet />
           </div>
         </main>

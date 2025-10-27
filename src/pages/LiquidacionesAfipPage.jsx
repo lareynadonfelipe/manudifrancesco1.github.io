@@ -52,6 +52,15 @@ function LiquidacionesAfipPage() {
   // Picker de archivos
   const liqPickerRef = useRef(null);
 
+  // === Global search (Navbar) ===
+  const [query, setQuery] = useState(typeof window !== "undefined" ? (window.__GLOBAL_SEARCH_QUERY__ || "") : "");
+  useEffect(() => {
+    const onGlobalSearch = (e) => setQuery(e?.detail?.q ?? "");
+    window.addEventListener("global-search", onGlobalSearch);
+    return () => window.removeEventListener("global-search", onGlobalSearch);
+  }, []);
+  const qNorm = (query || "").trim().toLowerCase();
+
   // Carga inicial: todas las liquidaciones
   useEffect(() => {
     let ignore = false;
@@ -193,8 +202,8 @@ function LiquidacionesAfipPage() {
     return (liquidaciones || []).filter((r) => {
       if (filterGrano && (r.grano || "") !== filterGrano) return false;
       if (filterCosecha && ((r.cosecha || r.campania || "")) !== filterCosecha) return false;
-      if (!q) return true;
-      return (
+      // búsqueda local del panel de filtros
+      const matchesLocal = !q || (
         norm(r.fecha).includes(q) ||
         norm(r.coe).includes(q) ||
         norm(r.nro_comprobante).includes(q) ||
@@ -208,132 +217,154 @@ function LiquidacionesAfipPage() {
         norm(r.pago_segun_condiciones).includes(q) ||
         norm(r.archivo_nombre).includes(q)
       );
+      if (!matchesLocal) return false;
+      // búsqueda global del Navbar (aplicada encima)
+      if (!qNorm) return true;
+      return (
+        norm(r.fecha).includes(qNorm) ||
+        norm(r.coe).includes(qNorm) ||
+        norm(r.nro_comprobante).includes(qNorm) ||
+        norm(r.grano).includes(qNorm) ||
+        norm(r.cosecha).includes(qNorm) ||
+        norm(r.campania).includes(qNorm) ||
+        norm(r.cantidad_kg).includes(qNorm) ||
+        norm(r.precio_kg).includes(qNorm) ||
+        norm(r.total_operacion).includes(qNorm) ||
+        norm(r.importe_neto_a_pagar).includes(qNorm) ||
+        norm(r.pago_segun_condiciones).includes(qNorm) ||
+        norm(r.archivo_nombre).includes(qNorm)
+      );
     });
-  }, [liquidaciones, filterSearch, filterGrano, filterCosecha]);
+  }, [liquidaciones, filterSearch, filterGrano, filterCosecha, qNorm]);
 
-  return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Header: botón Filtros + acciones */}
-      <div className="mb-5 flex items-center justify-end gap-3 flex-wrap">
-        <button
-          className="px-4 py-2 rounded-md shadow-sm transition text-white bg-emerald-600 hover:bg-emerald-700 text-base font-semibold"
-          onClick={handleUploadClick}
-        >
-          Cargar liquidación
-        </button>
-        <button
-          type="button"
-          onClick={() => setFiltersOpen((v) => !v)}
-          className="px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium inline-flex items-center gap-2"
-          title="Mostrar/ocultar filtros"
-        >
-          <Filter size={18} />
-          Filtros
-          {(filterSearch || filterGrano || filterCosecha) && (
-            <span className="ml-1 inline-flex items-center justify-center text-xs px-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">●</span>
-          )}
-        </button>
-
-        {selectedLiq && (
-          <>
-            <button
-              className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium"
-              onClick={() => {
-                setEditLiqData(selectedLiq);
-                setLiqInitialFile(null);
-                setLiquidacionOpen(true);
-              }}
-            >
-              Editar
-            </button>
-            <button
-              className="px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 text-base font-medium"
-              onClick={() => handleDelete(selectedLiq)}
-            >
-              Eliminar
-            </button>
-          </>
-        )}
+return (
+    <div className="w-full min-h-screen pb-12 px-2">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <h1 className="text-2xl font-semibold text-gray-700">Liquidaciones</h1>
       </div>
 
-      {/* Panel de filtros (toggle) */}
-      {filtersOpen && (
-        <div className="mt-3 w-full">
-          <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Buscar</label>
-              <input
-                type="text"
-                value={filterSearch}
-                onChange={(e)=>setFilterSearch(e.target.value)}
-                placeholder="grano, cosecha, COE, comprobante, KG, precio…"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Grano</label>
-              <select
-                value={filterGrano}
-                onChange={(e)=>setFilterGrano(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="">(todos)</option>
-                {granoOpts.map(g => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Cosecha</label>
-              <select
-                value={filterCosecha}
-                onChange={(e)=>setFilterCosecha(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="">(todas)</option>
-                {cosechaOpts.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-3 flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                className="px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-50 text-sm"
-                onClick={() => { setFilterSearch(''); setFilterGrano(''); setFilterCosecha(''); }}
-              >
-                Limpiar
-              </button>
-              <button
-                type="button"
-                className="px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
-                onClick={() => setFiltersOpen(false)}
-              >
-                Aplicar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Contenido */}
       <div className="rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
+        {/* Body del card */}
         {loading ? (
-          <div className="px-5 py-10 text-center text-gray-500">Cargando…</div>
+          <div className="px-5 py-10 text-left text-gray-500">Cargando…</div>
         ) : error ? (
-          <div className="px-5 py-10 text-center text-red-600">Error: {error}</div>
+          <div className="px-5 py-10 text-left text-red-600">Error: {error}</div>
         ) : filteredRows.length === 0 ? (
-          <div className="px-5 py-10 text-center text-gray-500">Sin liquidaciones cargadas.</div>
+          <div className="px-5 py-10 text-left text-gray-500">
+            {(qNorm || filterSearch || filterGrano || filterCosecha)
+              ? "No hay liquidaciones que coincidan con la búsqueda."
+              : "Sin liquidaciones cargadas."}
+          </div>
         ) : (
           <div className="overflow-x-auto max-h-[65vh] space-y-8">
             {/* TABLA: Todas las liquidaciones (unificada) */}
             <div className="rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
               <div className="px-5 py-3 bg-white/70 border-b border-gray-200/60 backdrop-blur flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Todas las liquidaciones</h2>
-                <span className="text-sm text-gray-500">{filteredRows.length} registros</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen((v) => !v)}
+                    className="px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium inline-flex items-center gap-2"
+                    title="Mostrar/ocultar filtros"
+                  >
+                    <Filter size={18} />
+                    Filtros
+                    {(filterSearch || filterGrano || filterCosecha) && (
+                      <span className="ml-1 inline-flex items-center justify-center text-xs px-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">●</span>
+                    )}
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md shadow-sm transition text-white bg-emerald-600 hover:bg-emerald-700 text-base font-semibold"
+                    onClick={handleUploadClick}
+                  >
+                    Cargar liquidación
+                  </button>
+                  {selectedLiq && (
+                    <>
+                      <button
+                        className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 text-base font-medium"
+                        onClick={() => {
+                          setEditLiqData(selectedLiq);
+                          setLiqInitialFile(null);
+                          setLiquidacionOpen(true);
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 text-base font-medium"
+                        onClick={() => handleDelete(selectedLiq)}
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
+              {filtersOpen && (
+                <div className="px-5 py-3 border-b border-gray-200/60 bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Buscar</label>
+                      <input
+                        type="text"
+                        value={filterSearch}
+                        onChange={(e)=>setFilterSearch(e.target.value)}
+                        placeholder="grano, cosecha, COE, comprobante, KG, precio…"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Grano</label>
+                      <select
+                        value={filterGrano}
+                        onChange={(e)=>setFilterGrano(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      >
+                        <option value="">(todos)</option>
+                        {granoOpts.map(g => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Cosecha</label>
+                      <select
+                        value={filterCosecha}
+                        onChange={(e)=>setFilterCosecha(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      >
+                        <option value="">(todas)</option>
+                        {cosechaOpts.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-3 flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-50 text-sm"
+                        onClick={() => { setFilterSearch(''); setFilterGrano(''); setFilterCosecha(''); }}
+                      >
+                        Limpiar
+                      </button>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
+                        onClick={() => setFiltersOpen(false)}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="overflow-x-auto overflow-y-auto relative" style={{ maxHeight: "65vh" }}>
                 <table className="min-w-full table-fixed text-base">
+                  {/* ... tabla sin cambios ... */}
                   <thead className="bg-white sticky top-0 z-10 border-b border-gray-200/60">
                     <tr>
                       {[

@@ -1,5 +1,5 @@
 // src/pages/CosechasPage.jsx
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useUIStore } from "@/store/uiStore"
 import { useCampaniaStore } from "@/store/campaniaStore"
@@ -8,14 +8,31 @@ const formatNumber = (n) => n?.toLocaleString("es-AR")
 
 const CosechasPage = () => {
   const { mode } = useUIStore()
-  const { campaniaSeleccionada } = useCampaniaStore()
+  const { campaniaSeleccionada, setCampaniaSeleccionada } = useCampaniaStore()
+  
 
   const [cosechas, setCosechas] = useState([])
   const [siembras, setSiembras] = useState([])
   const [camiones, setCamiones] = useState([])
+  // Opciones de campaña (unión de siembras y cosechas)
+  const campanias = useMemo(() => {
+    const set = new Set();
+    for (const s of siembras) set.add(s.campania);
+    for (const c of cosechas) set.add(c.campania);
+    return Array.from(set).filter(Boolean).sort((a,b)=> String(b).localeCompare(String(a)));
+  }, [siembras, cosechas]);
   const cultivos = ["Soja", "Maíz", "Trigo"]
   const [cultivoSeleccionado, setCultivoSeleccionado] = useState(cultivos[0])
   const [loteSeleccionado, setLoteSeleccionado] = useState(null)
+
+  // === Global search integration ===
+  const [query, setQuery] = useState(typeof window !== "undefined" ? (window.__GLOBAL_SEARCH_QUERY__ || "") : "");
+  useEffect(() => {
+    const onGlobalSearch = (e) => setQuery(e?.detail?.q ?? "");
+    window.addEventListener("global-search", onGlobalSearch);
+    return () => window.removeEventListener("global-search", onGlobalSearch);
+  }, []);
+  const qNorm = (query || "").trim().toLowerCase();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,10 +61,19 @@ const CosechasPage = () => {
       return acc
     }, {})
 
-  // Camiones filtrados
-  const camionesFiltrados = loteSeleccionado
-    ? camiones.filter((c) => c.cosecha_id === loteSeleccionado.id)
-    : []
+  // Camiones filtrados (por lote seleccionado) + búsqueda global
+  const camionesFiltrados = useMemo(() => {
+    const base = loteSeleccionado
+      ? camiones.filter((c) => c.cosecha_id === loteSeleccionado.id)
+      : [];
+    if (!qNorm) return base;
+    return base.filter((c) => {
+      const destino = (c.destino || "").toLowerCase();
+      const para = (c.camion_para || "").toLowerCase();
+      const ctg = (c.ctg || "").toString().toLowerCase();
+      return destino.includes(qNorm) || para.includes(qNorm) || ctg.includes(qNorm);
+    });
+  }, [camiones, loteSeleccionado, qNorm]);
 
   // Resumen por destino
   const resumenPorDestino = Object.values(
@@ -70,29 +96,40 @@ const CosechasPage = () => {
 
 // Función para renderizar resultado lotes
 const renderTablaCultivo = (cultivo) => {
-  const items = cosechasAgrupadas[cultivo] || []
-  const totales = { ha: 0, kgCampo: 0, kgCecilia: 0, kgHoracio: 0 }
+  const items = cosechasAgrupadas[cultivo] || [];
+  // Filtro por búsqueda global
+  const itemsFiltrados = !qNorm
+    ? items
+    : items.filter((item) => {
+        const s = siembras.find(
+          (x) => x.campania === item.campania && x.lote === item.lote
+        ) || {};
+        const productor = (s.productor || "").toLowerCase();
+        const lote = (item.lote || "").toLowerCase();
+        return productor.includes(qNorm) || lote.includes(qNorm);
+      });
+  const totales = { ha: 0, kgCampo: 0, kgCecilia: 0, kgHoracio: 0 };
 
-  const rows = items.map((item) => {
+  const rows = itemsFiltrados.map((item) => {
     const s = siembras.find(
       (x) => x.campania === item.campania && x.lote === item.lote
-    ) || {}
-    const ha = s.ha || 0
-    const productor = s.productor || "-"
-    const camDel = camiones.filter((c) => c.cosecha_id === item.id)
-    const kgCampo = camDel.reduce((sum, c) => sum + (c.kg_campo || 0), 0)
+    ) || {};
+    const ha = s.ha || 0;
+    const productor = s.productor || "-";
+    const camDel = camiones.filter((c) => c.cosecha_id === item.id);
+    const kgCampo = camDel.reduce((sum, c) => sum + (c.kg_campo || 0), 0);
     const kgCec = camDel
       .filter((c) => c.camion_para === "Cecilia")
-      .reduce((sum, c) => sum + (c.kg_campo || 0), 0)
+      .reduce((sum, c) => sum + (c.kg_campo || 0), 0);
     const kgHor = camDel
       .filter((c) => c.camion_para === "Horacio")
-      .reduce((sum, c) => sum + (c.kg_campo || 0), 0)
-    const rto = ha ? (kgCampo / ha / 100).toFixed(2) : "-"
+      .reduce((sum, c) => sum + (c.kg_campo || 0), 0);
+    const rto = ha ? (kgCampo / ha / 100).toFixed(2) : "-";
 
-    totales.ha += ha
-    totales.kgCampo += kgCampo
-    totales.kgCecilia += kgCec
-    totales.kgHoracio += kgHor
+    totales.ha += ha;
+    totales.kgCampo += kgCampo;
+    totales.kgCecilia += kgCec;
+    totales.kgHoracio += kgHor;
 
     return (
       <tr
@@ -108,12 +145,12 @@ const renderTablaCultivo = (cultivo) => {
         <td className="px-4 py-2 text-right">{formatNumber(kgCec)}</td>
         <td className="px-4 py-2 text-right">{formatNumber(kgHor)}</td>
       </tr>
-    )
-  })
+    );
+  });
 
   const rendimientoProm = totales.ha
     ? (totales.kgCampo / totales.ha / 100).toFixed(2)
-    : "-"
+    : "-";
 
   return (
     <div className="self-start rounded-xl border bg-white shadow-sm overflow-hidden w-full">
@@ -123,6 +160,11 @@ const renderTablaCultivo = (cultivo) => {
           Resultado Lotes
         </h3>
       </div>
+      {qNorm && itemsFiltrados.length === 0 && (
+        <div className="px-4 py-6 text-sm text-gray-500">
+          No hay lotes que coincidan con “{query}”.
+        </div>
+      )}
       {/* Scroll en móvil, visible completo en desktop */}
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -152,12 +194,35 @@ const renderTablaCultivo = (cultivo) => {
         </table>
       </div>
     </div>
-  )
+  );
 }
 
 
   return (
     <div className="w-full min-h-screen pb-12 px-2">
+      {/* Encabezado de página */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <h1 className="text-2xl font-semibold text-gray-700">Cosechas</h1>
+        <div className="flex items-center gap-2">
+          <select
+            id="campania-cosechas"
+            aria-label="Seleccionar campaña"
+            value={campaniaSeleccionada || ''}
+            onChange={(e)=> setCampaniaSeleccionada(e.target.value || null)}
+            className="border-gray-300 rounded-md px-3 py-2 text-sm h-9"
+          >
+            <option value="">Seleccioná campaña…</option>
+            {campanias.map((c)=> (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {!campaniaSeleccionada && (
+        <div className="mb-4 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+          Seleccioná una campaña para ver resultados.
+        </div>
+      )}
       {campaniaSeleccionada && (
         <>
           {/* Pestañas de cultivo */}
@@ -406,62 +471,62 @@ const renderTablaCultivo = (cultivo) => {
                 {renderTablaCultivo(cultivoSeleccionado)}
 
                  {/* Camiones del lote */}
-                 <div className="self-start rounded-xl border bg-white shadow-sm overflow-hidden">
-                 <div className="px-4 py-2 bg-[#f1f4f3] border-b">
+                <div className="self-start rounded-xl border bg-white shadow-sm overflow-hidden">
+                  <div className="px-4 py-2 bg-[#f1f4f3] border-b">
                     <h3 className="text-sm font-semibold text-[#235633] uppercase">
                       {loteSeleccionado
                         ? `Camiones ${loteSeleccionado.lote}`
                         : "Seleccioná un lote"}
                     </h3>
                   </div>
-               
                   <div className="overflow-x-auto">
-                  {loteSeleccionado && camionesFiltrados.length > 0 ? (
-  <table className="min-w-full table-fixed text-xs sm:text-sm">
-    <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
-      <tr>
-        <th className="px-4 py-2 text-left">Fecha</th>
-        <th className="px-4 py-2 text-left">Destino</th>
-        <th className="px-4 py-2 text-left">Camión Para</th>
-        <th className="px-4 py-2 text-left">CTG</th>
-        <th className="px-4 py-2 text-right">Kg Campo</th>
-        <th className="px-4 py-2 text-right">Kg Destino</th>
-      </tr>
-    </thead>
-    <tbody>
-      {camionesFiltrados.map((c) => {
-        const f = new Date(c.fecha)
-        const fechaFmt = `${String(f.getDate()).padStart(2,"0")}/${String(f.getMonth()+1).padStart(2,"0")}/${String(f.getFullYear()).slice(-2)}`
-        return (
-          <tr key={c.id} className="border-t hover:bg-gray-50">
-            <td className="px-4 py-2">{fechaFmt}</td>
-            <td className="px-4 py-2">{c.destino}</td>
-            <td className="px-4 py-2">{c.camion_para}</td>
-            <td className="px-4 py-2">{c.ctg}</td>
-            <td className="px-4 py-2 text-right">{formatNumber(c.kg_campo)}</td>
-            <td className="px-4 py-2 text-right">{formatNumber(c.kg_destino)}</td>
-          </tr>
-        )
-      })}
-    </tbody>
-    <tfoot className="bg-[#f1f4f3] font-semibold border-t">
-      <tr>
-        <td colSpan={4} className="px-4 py-2 text-left">Total</td>
-        <td className="px-4 py-2 text-right">
-          {formatNumber(camionesFiltrados.reduce((s,c)=>s+(c.kg_campo||0),0))}
-        </td>
-        <td className="px-4 py-2 text-right">
-          {formatNumber(camionesFiltrados.reduce((s,c)=>s+(c.kg_destino||0),0))}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-) : (
-  <p className="px-4 py-6 text-center text-gray-500">
-    {loteSeleccionado ? "No hay camiones registrados." : "Seleccioná un lote."}
-  </p>
-)}
-
+                    {loteSeleccionado && camionesFiltrados.length > 0 ? (
+                      <table className="min-w-full table-fixed text-xs sm:text-sm">
+                        <thead className="bg-[#f9faf9] text-gray-700 text-xs uppercase">
+                          <tr>
+                            <th className="px-4 py-2 text-left">Fecha</th>
+                            <th className="px-4 py-2 text-left">Destino</th>
+                            <th className="px-4 py-2 text-left">Camión Para</th>
+                            <th className="px-4 py-2 text-left">CTG</th>
+                            <th className="px-4 py-2 text-right">Kg Campo</th>
+                            <th className="px-4 py-2 text-right">Kg Destino</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {camionesFiltrados.map((c) => {
+                            const f = new Date(c.fecha);
+                            const fechaFmt = `${String(f.getDate()).padStart(2, "0")}/${String(f.getMonth() + 1).padStart(2, "0")}/${String(f.getFullYear()).slice(-2)}`;
+                            return (
+                              <tr key={c.id} className="border-t hover:bg-gray-50">
+                                <td className="px-4 py-2">{fechaFmt}</td>
+                                <td className="px-4 py-2">{c.destino}</td>
+                                <td className="px-4 py-2">{c.camion_para}</td>
+                                <td className="px-4 py-2">{c.ctg}</td>
+                                <td className="px-4 py-2 text-right">{formatNumber(c.kg_campo)}</td>
+                                <td className="px-4 py-2 text-right">{formatNumber(c.kg_destino)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="bg-[#f1f4f3] font-semibold border-t">
+                          <tr>
+                            <td colSpan={4} className="px-4 py-2 text-left">Total</td>
+                            <td className="px-4 py-2 text-right">
+                              {formatNumber(camionesFiltrados.reduce((s, c) => s + (c.kg_campo || 0), 0))}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              {formatNumber(camionesFiltrados.reduce((s, c) => s + (c.kg_destino || 0), 0))}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    ) : (
+                      <p className="px-4 py-6 text-center text-gray-500">
+                        {loteSeleccionado
+                          ? (qNorm ? "No hay camiones que coincidan con la búsqueda." : "No hay camiones registrados.")
+                          : "Seleccioná un lote."}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

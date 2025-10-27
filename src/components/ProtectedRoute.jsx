@@ -29,13 +29,21 @@ export default function ProtectedRoute({ permissionKey, children }) {
 
   const { permissions, email } = usuario;
 
-  // 2) Caso especial: bloquear acceso a todo excepto login y unauthorized a horaciolinzoain@hotmail.com
+  // 2) Caso especial: denegar acceso SOLO a páginas de gestión comercial y contactos para horaciolinzoain@hotmail.com
   const blockedUser = "horaciolinzoain@hotmail.com";
-  if (
-    email === blockedUser &&
-    location.pathname !== "/login" &&
-    location.pathname !== "/unauthorized"
-  ) {
+  const blockedPrefixes = [
+    "/ventas",
+    "/liquidaciones",
+    "/facturas",
+    "/stock",
+    "/stock-ventas",
+    "/contactos",
+  ];
+
+  const shouldBlock =
+    email === blockedUser && blockedPrefixes.some((p) => location.pathname.startsWith(p));
+
+  if (shouldBlock) {
     return <Navigate to="/unauthorized" replace />;
   }
 

@@ -1,11 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/uiStore";
 import { useCampaniaStore } from "@/store/campaniaStore";
 
 const CamionesPage = () => {
   const { mode } = useUIStore();
-  const { campaniaSeleccionada } = useCampaniaStore();
+  const { campaniaSeleccionada, setCampaniaSeleccionada } = useCampaniaStore();
+  const [campanias, setCampanias] = useState([]);
+  useEffect(() => {
+    const fetchCampanias = async () => {
+      const { data, error } = await supabase
+        .from('siembras')
+        .select('campania')
+        .order('campania', { ascending: false });
+      if (!error) {
+        const uniq = Array.from(new Set((data || []).map((d) => d.campania))).filter(Boolean);
+        setCampanias(uniq);
+      }
+    };
+    fetchCampanias();
+  }, []);
 
   const [camionesPorDestino, setCamionesPorDestino] = useState({});
   const [destinoSeleccionado, setDestinoSeleccionado] = useState(null);
@@ -13,6 +27,15 @@ const CamionesPage = () => {
   const [editandoFilaId, setEditandoFilaId] = useState(null);
   const [filaEditada, setFilaEditada] = useState({});
   const [usuarioEmail, setUsuarioEmail] = useState("");
+
+  // === Global search (Navbar) ===
+  const [query, setQuery] = useState(typeof window !== "undefined" ? (window.__GLOBAL_SEARCH_QUERY__ || "") : "");
+  useEffect(() => {
+    const onGlobalSearch = (e) => setQuery(e?.detail?.q ?? "");
+    window.addEventListener("global-search", onGlobalSearch);
+    return () => window.removeEventListener("global-search", onGlobalSearch);
+  }, []);
+  const qNorm = (query || "").trim().toLowerCase();
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [nuevoCamion, setNuevoCamion] = useState({
@@ -77,18 +100,66 @@ const CamionesPage = () => {
   }, [campaniaSeleccionada, mostrarFormulario]);
 
   if (!campaniaSeleccionada) {
-    return <div className="p-4 text-center text-gray-600">Por favor selecciona una campaña.</div>;
+    return <div className="p-4 text-center text-gray-600">Seleccioná una campaña para ver resultados.</div>;
   }
 
-  const destinos = Object.keys(camionesPorDestino).sort();
+  // Aplica filtro global por destino, camion_para, chofer, chasis, CTG y fecha
+  const camionesFiltradosPorDestino = useMemo(() => {
+    if (!qNorm) return camionesPorDestino;
+    const out = {};
+    for (const [dest, arr] of Object.entries(camionesPorDestino)) {
+      const arrFiltrada = arr.filter((c) => {
+        const destino = (c.destino || dest || "").toLowerCase();
+        const para = (c.camion_para || "").toLowerCase();
+        const chofer = (c.chofer || "").toLowerCase();
+        const chasis = (c.chasis || "").toLowerCase();
+        const ctg = (c.ctg || "").toString().toLowerCase();
+        const fecha = c.fecha ? new Date(c.fecha).toLocaleDateString("es-AR").toLowerCase() : "";
+        const kgCampo = (c.kg_campo ?? "").toString().toLowerCase();
+        const kgDestino = (c.kg_destino ?? "").toString().toLowerCase();
+        return (
+          destino.includes(qNorm) ||
+          para.includes(qNorm) ||
+          chofer.includes(qNorm) ||
+          chasis.includes(qNorm) ||
+          ctg.includes(qNorm) ||
+          fecha.includes(qNorm) ||
+          kgCampo.includes(qNorm) ||
+          kgDestino.includes(qNorm)
+        );
+      });
+      if (arrFiltrada.length) out[dest] = arrFiltrada;
+    }
+    return out;
+  }, [camionesPorDestino, qNorm]);
+
+  const destinos = Object.keys(camionesFiltradosPorDestino).sort();
   const headers = ["Fecha", "CTG", "Productor", "Chofer", "Chasis", "Kg Campo", "Kg Destino"];
   const listaAMostrar =
-    destinoSeleccionado && camionesPorDestino[destinoSeleccionado]
-      ? camionesPorDestino[destinoSeleccionado]
-      : Object.values(camionesPorDestino).flat();
+    destinoSeleccionado && camionesFiltradosPorDestino[destinoSeleccionado]
+      ? camionesFiltradosPorDestino[destinoSeleccionado]
+      : Object.values(camionesFiltradosPorDestino).flat();
 
   return (
     <div className="px-4 sm:px-4 py-2 space-y-4">
+      {/* Encabezado de página */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-2xl font-semibold text-gray-700">Camiones</h1>
+        <div className="flex items-center gap-2">
+          <select
+            id="campania-camiones"
+            aria-label="Seleccionar campaña"
+            value={campaniaSeleccionada || ''}
+            onChange={(e)=> setCampaniaSeleccionada(e.target.value || null)}
+            className="border-gray-300 rounded-md px-3 py-2 text-sm h-9"
+          >
+            <option value="">Seleccioná campaña…</option>
+            {campanias.map((c)=> (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       {/* 🔒 Botón Nuevo Camión visible solo para manudifrancesco1 */}
       {usuarioEmail === "manudifrancesco1@gmail.com" && (
         <div>
@@ -185,7 +256,9 @@ const CamionesPage = () => {
         {loading ? (
           <div className="text-center flex-1 p-6 text-gray-500">Cargando camiones...</div>
         ) : !listaAMostrar.length ? (
-          <div className="text-center flex-1 p-6 text-gray-500">No hay camiones.</div>
+          <div className="text-center flex-1 p-6 text-gray-500">
+            {qNorm ? "No hay camiones que coincidan con la búsqueda." : "No hay camiones."}
+          </div>
         ) : (
           <div className="flex-1 overflow-auto relative">
             <table className="min-w-full table-auto text-sm text-gray-700 divide-y divide-gray-200">
