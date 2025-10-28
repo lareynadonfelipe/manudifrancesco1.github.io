@@ -23,6 +23,12 @@ const dmyToIso = (s) => {
   return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
 };
 
+// Sanitiza el nombre del archivo para paths de Storage
+const sanitizeFilename = (name) => String(name || '')
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '') // quita acentos
+  .replace(/[^a-zA-Z0-9._-]/g, '_');
+
 const PAGE_SIZE = 10;
 
 export default function FacturasPage() {
@@ -242,7 +248,6 @@ export default function FacturasPage() {
               .replace(/^\/?storage\/v1\/object\/(?:sign|public)\//i, '')
               .replace(/^facturas\//i, '');
             if (objectPath.startsWith('facturas/')) objectPath = objectPath.slice('facturas/'.length);
-            if (!/\.pdf(\?|$)/i.test(objectPath)) { existsMap[r.id] = false; return; }
             const { data: s, error: sErr } = await supabase.storage
               .from('facturas')
               .createSignedUrl(objectPath, 60);
@@ -651,10 +656,59 @@ export default function FacturasPage() {
           alert('No se pudo guardar la factura. Probá de nuevo.');
         }
       } else {
-        // Flujo original de confirmación OCR
-        setOcrOpen(false);
-await fetchList({ p: 1, append: false, s: sort, est: estadoChip });
-        await fetchCounts({ f: filters });
+        // Crear NUEVA factura: subir archivo al bucket privado y luego insertar fila
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          const user = authData?.user;
+          if (!user) throw new Error('Sin usuario autenticado');
+          if (!selectedFile) throw new Error('No hay archivo seleccionado');
+
+          // 1) Subir archivo a Storage (bucket privado "facturas")
+          const fname = sanitizeFilename(selectedFile.name || 'factura.pdf');
+          const path = `${user.id}/${Date.now()}_${fname}`;
+
+          const { error: upErr } = await supabase.storage
+            .from('facturas')
+            .upload(path, selectedFile, { upsert: false });
+          if (upErr) throw upErr;
+
+          const file_path = `facturas/${path}`; // guardamos ruta absoluta para compatibilidad
+
+          // 2) Insertar fila en la tabla facturas
+          const payload = {
+            file_path,
+            fecha_emision: dmyToIso(fechaEmision),
+            razon_social: razonSocial || null,
+            cuit: cuit || null,
+            numero_factura: numeroFactura || null,
+            importe_total: Number(importeTotal) || 0,
+            tipo_factura: tipoFactura || null,
+            neto: importeNetoGravado != null && importeNetoGravado !== '' ? Number(importeNetoGravado) : null,
+            fecha_vencimiento: fechaVencimiento ? dmyToIso(fechaVencimiento) : null,
+            forma_pago: formaPago || null,
+            categoria: categoria || null,
+          };
+
+          const { data: inserted, error: insErr } = await supabase
+            .from('facturas')
+            .insert([payload])
+            .select('id')
+            .single();
+          if (insErr) throw insErr;
+
+          // 3) Reset UI, cerrar modal y refrescar listado/contadores
+          setSelected(null);
+          setSelectedFile(null);
+          setFilePreviewUrl('');
+          setIsEdit(false);
+          setOcrOpen(false);
+
+          await fetchList({ p: 1, append: false, s: sort, est: estadoChip });
+          await fetchCounts({ f: filters });
+        } catch (err) {
+          console.error('create factura', err);
+          alert('No se pudo crear la factura. Revisá permisos y probá nuevamente.');
+        }
       }
     })();
   }

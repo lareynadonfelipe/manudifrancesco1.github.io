@@ -1,4 +1,8 @@
 // src/lib/ocr/runOcr.js
+import { GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+GlobalWorkerOptions.workerSrc = workerUrl;
+
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import Tesseract from 'tesseract.js';
 import { parseOcrText } from './parseOcrText';
